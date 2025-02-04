@@ -61,13 +61,11 @@ export function SellPageScreen() {
           onChangeText={setDuration}
           keyboardType="numeric"
         />
-        <View style={globalStyles.dropdownContainer}>
-          <PickerComponent
+        <PickerComponent
             selectedValue={category}
             onValueChange={setCategory}
             items={categories} // Pass the categories to the PickerComponent
-          />
-        </View>
+        />
         <InputField
           placeholder="Address"
           value={address}

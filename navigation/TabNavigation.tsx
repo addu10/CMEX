@@ -9,11 +9,13 @@ import ExploreScreen from '@/app/screens/Main/ExploreScreen';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigation() {
     return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
@@ -92,6 +94,7 @@ export default function TabNavigation() {
                 }}
             />
         </Tab.Navigator>
+        </GestureHandlerRootView>
     );
 }
 
