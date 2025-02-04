@@ -3,6 +3,11 @@ import { Text, View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'rea
 import Header from '@/components/Header';
 import { globalStyles } from '../../../theme/styles';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
+import Button from '@/components/Button';
+
+const Hi = () => {
+    console.log("Hi");
+  };
 
 const ProfileScreen = () => {
   // Sample user data
@@ -18,13 +23,9 @@ const ProfileScreen = () => {
       <Text style={globalStyles.title}>{user.name}</Text>
       <Text style={styles.email}>{user.email}</Text>
 
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Edit Profile</Text>
-      </TouchableOpacity>
+      <Button title="Edit Profile" onPress={Hi} />
 
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
+      <Button title="Back" onPress={Hi} />
     </View>
   );
 };
@@ -40,20 +41,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.secondary,
     marginBottom: 20,
-  },
-  button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: Colors.primary,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 10,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.buttonText,
   },
 });
 
