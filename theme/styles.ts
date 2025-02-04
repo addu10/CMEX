@@ -5,7 +5,6 @@ import { Fonts } from './fonts';
 export const globalStyles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: Colors.background,
     alignItems: 'center',
     paddingTop: 130,
     paddingHorizontal: 20,
@@ -20,11 +19,23 @@ export const globalStyles = StyleSheet.create({
     height: 100,
     resizeMode: 'contain',
   },
+  dropdownContainer: {
+    marginBottom: 15,
+  },
+  dropdown: {
+    height: 50,
+    width: 200,
+    borderColor: Colors.border, // Use your border color
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: Colors.titleText,
     marginVertical: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,

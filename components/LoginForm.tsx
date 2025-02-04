@@ -1,8 +1,8 @@
 // LoginForm.tsx
 import React, { useState } from 'react';
 import { View, } from 'react-native';
-import InputField from '../components/InputField';
-import Button from '../components/Button';
+import InputField from './InputField';
+import Button from './Button';
 import { globalStyles } from '../theme/styles';
 
 const LoginForm = () => {

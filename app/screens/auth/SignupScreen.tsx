@@ -1,14 +1,14 @@
 // screens/Auth/SignupScreen.tsx
 import React, { useState, useRef } from 'react';
-import { ScrollView, Animated, Text } from 'react-native';
+import { ScrollView, Animated, Text, View } from 'react-native';
 import { globalStyles } from '../../../theme/styles';
 import Logo from '../../../components/Logo';
 import InputField from '../../../components/InputField';
 import Button from '../../../components/Button';
 import PickerComponent from '../../../components/PickerComponent';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack'; // Import the StackNavigationProp
-import { RootStackParamList } from '../../../types/types'; // Import your types
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../../types/types';
 
 type HeaderNavigationProp = StackNavigationProp<RootStackParamList, 'SignupScreen'>;
 
@@ -24,7 +24,8 @@ const SignupScreen = () => {
     password: '',
     confirmPassword: '',
   });
-
+  const [error, setError] = useState('');
+  
   const handleChange = (key: keyof typeof formData, value: string) => {
     setFormData({ ...formData, [key]: value });
   };
@@ -62,22 +63,25 @@ const SignupScreen = () => {
     }).start();
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match!');
       return;
     }
-    console.log(formData);
-
     if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
       alert('Error, All fields are required!');
       return;
     }
 
-    /* Navigate to CollegeVerificationScreen with the data
-    navigation.navigate('CollegeVerification', {
-      formData,
-    });*/
+    try {
+      // Create user with email and password
+      console.log(formData.username,formData.password);
+      alert('Signup successful!');
+      // Navigate to the next screen or perform any other action
+      // navigation.navigate('NextScreen'); // Uncomment and replace with your next screen
+    } catch (err) {
+      setError(err+" Error");
+    }
   };
 
   return (
@@ -85,6 +89,7 @@ const SignupScreen = () => {
       <Logo />
       <Text style={globalStyles.title}>Welcome to C-MEX!</Text>
       <Text style={globalStyles.subtitle}>Buy, Sell, Rent—All in One Place</Text>
+      {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
       <Animated.View style={[globalStyles.stepContainer, { opacity: fadeAnim }]}>
         {currentStep === 1 && (
           <>
@@ -117,7 +122,7 @@ const SignupScreen = () => {
         )}
         {currentStep === 3 && (
           <>
-            <InputField placeholder="Username" value={formData.username} onChangeText={(text) => handleChange('username', text)} />
+            <InputField placeholder="Username (Email)" value={formData.username} onChangeText={(text) => handleChange('username', text)} />
             <InputField placeholder="Set Password" value={formData.password} secureTextEntry onChangeText={(text) => handleChange('password', text)} />
             <InputField placeholder="Confirm Password" value={formData.confirmPassword} secureTextEntry onChangeText={(text) => handleChange('confirmPassword', text)} />
             <Button title="Back" onPress={prevStep} />

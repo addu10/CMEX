@@ -5,15 +5,21 @@ import ActionButtons from '../../../components/ActionButtons';
 import SaleBanner from '../../../components/SaleBanner';
 import CategoryList from '../../../components/CategoryList';
 import ItemCarousel from '../../../components/ItemCarousel';
+import SearchBar from '@/components/SearchBar';
 
-const HomeScreen = () => (
-  <ScrollView style={{ flex: 1, backgroundColor: '#f6f6f6', padding: 16 }}>
-    <Header />
-    <ActionButtons />
-    <SaleBanner />
-    <CategoryList />
-    <ItemCarousel />
-  </ScrollView>
-);
+export default function HomeScreen() {
+  const handleSearch = (query: string) => {
+    console.log("Searching for:", query);
+  };
 
-export default HomeScreen;
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: '#f6f6f6', padding: 16 }}>
+      <Header />
+      <SearchBar />
+      <ActionButtons />
+      <SaleBanner />
+      <CategoryList />
+      <ItemCarousel />
+    </ScrollView>
+  );
+}

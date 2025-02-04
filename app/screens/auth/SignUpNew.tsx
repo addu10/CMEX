@@ -1,13 +1,21 @@
+
+
 // screens/Auth/SignupScreen.tsx
 import React, { useState, useRef } from 'react';
 import { ScrollView, Animated, Text } from 'react-native';
-import { globalStyles } from '../../theme/styles';
-import Logo from '../../components/Logo';
-import InputField from '../../components/InputField';
-import Button from '../../components/Button';
-import PickerComponent from '../../components/PickerComponent';
+import { globalStyles } from '../../../theme/styles';
+import Logo from '../../../components/Logo';
+import InputField from '../../../components/InputField';
+import Button from '../../../components/Button';
+import PickerComponent from '../../../components/PickerComponent';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack'; // Import the StackNavigationProp
+import { RootStackParamList } from '../../../types/types'; // Import your types
+
+type HeaderNavigationProp = StackNavigationProp<RootStackParamList, 'SignupScreen'>;
 
 const SignupScreen = () => {
+  const navigation = useNavigation<HeaderNavigationProp>();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -62,6 +70,16 @@ const SignupScreen = () => {
       return;
     }
     console.log(formData);
+
+    if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
+      alert('Error, All fields are required!');
+      return;
+    }
+
+    /* Navigate to CollegeVerificationScreen with the data
+    navigation.navigate('CollegeVerification', {
+      formData,
+    });*/
   };
 
   return (

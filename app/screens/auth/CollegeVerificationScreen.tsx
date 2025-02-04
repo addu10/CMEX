@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+/*import React, { useState } from 'react';
 import { View, Text, Button, Alert } from 'react-native';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import { BarCodeReadEvent } from 'react-native-camera';
@@ -58,4 +58,4 @@ const CollegeVerificationScreen = ({ route }: any) => {
   );
 };
 
-export default CollegeVerificationScreen;
+export default CollegeVerificationScreen;*/
