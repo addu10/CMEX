@@ -1,7 +1,7 @@
 // components/CategoryCard.tsx
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 interface CategoryCardProps {
   icon: string;

@@ -9,7 +9,10 @@ const categories = [
   { name: 'Second Hand Bikes', icon: 'bicycle' },
   { name: 'Kitchen Appliances', icon: 'blender' },
   { name: 'Electronics', icon: 'tv' },
+  { name: 'Sport Accessories', icon: 'volleyball-ball' },
 ];
+
+
 
 const CategoryList = () => (
   <View style={styles.container}>
