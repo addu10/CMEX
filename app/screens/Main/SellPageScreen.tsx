@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, ScrollView, Image, Platform, TouchableOpacity } from 'react-native';
 import Header from '@/components/Header';
 import InputField from '@/components/InputField'; // Adjust the import path as necessary
 import Button from '@/components/Button'; // Adjust the import path as necessary
@@ -8,14 +8,21 @@ import { globalStyles } from '../../../theme/styles';
 import { getFirestore } from "firebase/firestore";
 import { app } from "../../../FirebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
+import * as ImagePicker from 'expo-image-picker';
 
 interface Category {
   id: string;
-  name: string;
+  Name: string;
 }
 
 export function SellPageScreen() {
   const db = getFirestore(app);
+
+  useEffect(() => {
+    getCategoryList();
+  }, []);
+
+
   const [categoryList, setCategoryList] = useState<{ label: string; value: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>(''); // State for selected category
   const [title, setTitle] = useState('');
@@ -23,16 +30,64 @@ export function SellPageScreen() {
   const [price, setPrice] = useState('');
   const [duration, setDuration] = useState('');
   const [address, setAddress] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>('');
+
+  /*const getCategoryList = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db,'Category'));
+      console.log("Entered getList");
+      // const categories: { label: string; value: string }[] = [];
+      querySnapshot.forEach((doc) => {
+        console.log("Entered forEach")
+        //const data = doc.data() as Category;
+        //console.log(doc.id, " => ", data);
+        //categories.push({ label: data.name, value: doc.id });
+        console.log("Docs:",doc.data());
+      });
+      /*console.log("Fetched categories:", categories);
+      setCategoryList(categories);
+      if (categories.length > 0) {
+        setSelectedCategory(categories[0].value);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    } 
+  };*/
+
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsEditing: true,
+      aspect: [4, 4],
+      quality: 1,
+    });
+
+    console.log(result);
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
   const getCategoryList = async () => {
+    console.log("Fetching categories...");
     try {
-      const querySnapshot = await getDocs(collection(db, "Category"));
+      const querySnapshot = await getDocs(collection(db, "Category "));
+      console.log("Query Snapshot:", querySnapshot); // Log the snapshot
+      if (querySnapshot.empty) {
+        console.log("No documents found in the Category collection.");
+        return; // Exit if no documents are found
+      }
+      
       const categories: { label: string; value: string }[] = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc) => { 
         const data = doc.data() as Category;
         console.log(doc.id, " => ", data);
-        categories.push({ label: data.name, value: doc.id });
+        categories.push({ label: data.Name, value: doc.id }); // Ensure the field name matches
       });
+      
       console.log("Fetched categories:", categories);
       setCategoryList(categories);
       if (categories.length > 0) {
@@ -43,17 +98,6 @@ export function SellPageScreen() {
     }
   };
 
-  const testFirestore = async () => {
-    const querySnapshot = await getDocs(collection(db, "Category"));
-    querySnapshot.forEach((doc) => {
-      console.log(doc.id, " => ", doc.data());
-    });
-  };
-
-
-  useEffect(() => {
-    getCategoryList();
-  }, []);
 
 
   const handleSubmit = () => {
@@ -62,8 +106,9 @@ export function SellPageScreen() {
       description,
       price,
       duration,
-      category: selectedCategory, // Use selectedCategory state
+      category: selectedCategoryName, // Use selectedCategory state
       address,
+      image,
     });
   };
 
@@ -72,6 +117,12 @@ export function SellPageScreen() {
       <Header />
       <ScrollView contentContainerStyle={globalStyles.container}>
         <Text style={globalStyles.title}>Sell Your Item</Text>
+        
+        <TouchableOpacity onPress={pickImage}>
+        {image?
+        <Image source={{uri:image}} style={{width:300,height:300,borderRadius:10,borderColor:"black",borderWidth:1}}/>
+        :<Image style={{width:300,height:300,borderRadius:10,borderColor:"black",borderWidth:1}} source={require('../../../assets/images/hue_shifted_transparent.png')}/>
+        }</TouchableOpacity>
         <InputField
           placeholder="Title"
           value={title}
@@ -81,6 +132,7 @@ export function SellPageScreen() {
           placeholder="Description"
           value={description}
           onChangeText={setDescription}
+          style={{ height: 130}}
         />
         <InputField
           placeholder="Price"
@@ -95,16 +147,21 @@ export function SellPageScreen() {
           keyboardType="numeric"
         />
         <PickerComponent
-          selectedValue={selectedCategory} // Use selectedCategory state
-          onValueChange={setSelectedCategory} // Update selected category
-          items={categoryList} // Pass the categories to the PickerComponent
+          selectedValue={selectedCategory}
+          onValueChange={(value) => {
+            setSelectedCategory(value);
+            const selectedCategoryData = categoryList.find(category => category.value === value);
+            setSelectedCategoryName(selectedCategoryData ? selectedCategoryData.label : '');
+          }}
+          items={categoryList}
         />
         <InputField
           placeholder="Address"
           value={address}
           onChangeText={setAddress}
         />
-        <Button title="Submit" onPress={handleSubmit} />
+        <Button title="Submit" onPress={handleSubmit}/>
+
       </ScrollView>
     </View>
   );

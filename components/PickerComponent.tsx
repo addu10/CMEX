@@ -18,7 +18,7 @@ const PickerComponent: React.FC<PickerComponentProps> = ({ selectedValue, onValu
         style={globalStyles.picker}
       >
         {items.map((item) => (
-          <Picker.Item label={item.label} value={item.value} key={item.value} />
+          <Picker.Item label={item.label} value={item.value} key={item.value} style={globalStyles.pickerItem}/>
         ))}
       </Picker>
     </View>

@@ -25,7 +25,7 @@ export default function TabNavigation() {
                     borderTopWidth: 0, // Remove the top border
                     position: 'absolute', // Positioning
                     height: 60, // Height of the tab bar
-                    bottom: 20,
+                    bottom: 10,
                     borderRadius: 25,
                     paddingBottom: 10,
                 },

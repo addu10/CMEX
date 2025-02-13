@@ -6,9 +6,10 @@ export const globalStyles = StyleSheet.create({
   container: {
     flexGrow: 1,
     alignItems: 'center',
-    paddingTop: 130,
+    paddingTop: 100,
     paddingHorizontal: 20,
     gap: 10,
+    paddingBottom: 60,
   },
   logoContainer: {
     alignItems: 'center',
@@ -72,15 +73,16 @@ export const globalStyles = StyleSheet.create({
   }, 
   picker: {
     width: '90%',
-    height: 50,
-    borderRadius: 25,
+    height: 46,
+    borderRadius: 20,
+    borderColor: 'black',
     borderWidth: 1,
-    borderColor: Colors.border,
     backgroundColor: Colors.inputBackground,
-    paddingLeft: 10,
+    top: 1.5,
   },
   pickerItem: {
-    fontSize: 16,
+    fontSize: 13,
     color: Colors.secondary,
+    backgroundColor: Colors.inputBackground,
   },
 });
