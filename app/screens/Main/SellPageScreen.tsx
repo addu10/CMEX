@@ -9,6 +9,7 @@ import { getFirestore } from "firebase/firestore";
 import { app } from "../../../FirebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import * as ImagePicker from 'expo-image-picker';
+import { getStorage, ref, uploadBytes } from "firebase/storage";
 
 interface Category {
   id: string;
@@ -17,7 +18,7 @@ interface Category {
 
 export function SellPageScreen() {
   const db = getFirestore(app);
-
+  const storage = getStorage(app);
   useEffect(() => {
     getCategoryList();
   }, []);
@@ -97,20 +98,36 @@ export function SellPageScreen() {
       console.error("Error fetching categories:", error);
     }
   };
-
-
-
-  const handleSubmit = () => {
-    console.log({
+  const onSubmitMethod = async () => {
+    const value = {
       title,
       description,
       price,
       duration,
-      category: selectedCategoryName, // Use selectedCategory state
+      category: selectedCategoryName,
       address,
       image,
-    });
+    };
+    console.log(value);
+    //convert Uri to Blob file
+    if (value.image) {
+      const response = await fetch(value.image);
+      const blob = await response.blob();
+      const storageRef = ref(storage, `images/${Date.now()}.jpg`);
+      await uploadBytes(storageRef, blob);
+      console.log("Image uploaded successfully!");
+      
+      uploadBytes(storageRef, blob).then((snapshot) => {
+  console.log('Uploaded a blob or file!');
+  console.log(value); // Directly log form data here
+});
+
+    } else {
+      console.error("No image selected");
+    }
   };
+
+
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f6f6f6', padding: 16 }}>
@@ -160,7 +177,7 @@ export function SellPageScreen() {
           value={address}
           onChangeText={setAddress}
         />
-        <Button title="Submit" onPress={handleSubmit}/>
+        <Button title="Submit" onPress={onSubmitMethod}/>
 
       </ScrollView>
     </View>
