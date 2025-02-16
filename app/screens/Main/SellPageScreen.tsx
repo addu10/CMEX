@@ -9,7 +9,8 @@ import { getFirestore } from "firebase/firestore";
 import { app } from "../../../FirebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import * as ImagePicker from 'expo-image-picker';
-import { getStorage, ref, uploadBytes } from "firebase/storage";
+import { createClient } from '@supabase/supabase-js';
+
 
 interface Category {
   id: string;
@@ -18,7 +19,12 @@ interface Category {
 
 export function SellPageScreen() {
   const db = getFirestore(app);
-  const storage = getStorage(app);
+
+  const supabaseUrl = "https://lsojaxaqxxxvesztcccn.supabase.co";
+  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxzb2pheGFxeHh4dmVzenRjY2NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2OTY0NjAsImV4cCI6MjA1NTI3MjQ2MH0.f9Dw8Qsg47-s_HX4rq6_VdzVY6cXwXQhX_p0oZjSt8o";
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
   useEffect(() => {
     getCategoryList();
   }, []);
@@ -113,15 +119,18 @@ export function SellPageScreen() {
     if (value.image) {
       const response = await fetch(value.image);
       const blob = await response.blob();
-      const storageRef = ref(storage, `images/${Date.now()}.jpg`);
-      await uploadBytes(storageRef, blob);
-      console.log("Image uploaded successfully!");
-      
-      uploadBytes(storageRef, blob).then((snapshot) => {
-  console.log('Uploaded a blob or file!');
-  console.log(value); // Directly log form data here
-});
-
+      const fileName = `images/${Date.now()}.jpg`;
+  
+      const { data, error } = await supabase.storage.from('images').upload(fileName, blob, {
+        contentType: 'image/jpeg',
+      });
+  
+      if (error) {
+        console.error("Error uploading image:", error);
+        return;
+      }
+  
+      console.log("Image uploaded successfully!", data);
     } else {
       console.error("No image selected");
     }

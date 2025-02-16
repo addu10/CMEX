@@ -1,10 +1,9 @@
-import { createStackNavigator } from '@react-navigation/stack';
-import SignupScreen from '../app/screens/auth/SignupScreen';
-import HomeScreen from '../app/screens/Main/HomeScreen';
-import LoginScreen from '../app/screens/auth/LoginScreen';
-import { RootStackParamList } from '../types/types'; 
+import { createStackNavigator } from "@react-navigation/stack";
+import SignupScreen from "../app/screens/auth/SignupScreen";
+import HomeScreen from "../app/screens/Main/HomeScreen";
+import LoginScreen from "../app/screens/auth/LoginScreen";
 
-const Stack = createStackNavigator <RootStackParamList> ();
+const Stack = createStackNavigator();
 
 export const HomeStack = () => {
   return (

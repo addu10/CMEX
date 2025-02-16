@@ -1,118 +1,132 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import React from 'react';
-import { Text, View, StyleSheet } from 'react-native';
-import HomeScreen from '@/app/screens/Main/HomeScreen';
-import ProfileScreen from '@/app/screens/Main/ProfileScreen';
-import SellPageScreen from '@/app/screens/Main/SellPageScreen';
-import SavedScreen from '@/app/screens/Main/SavedScreen';
-import ExploreScreen from '@/app/screens/Main/ExploreScreen';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import React from "react";
+import { createStackNavigator } from "@react-navigation/stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import {
+  TouchableOpacity,
+  StyleSheet,
+  View,
+  GestureResponderEvent,
+} from "react-native";
+import Svg, { Path } from "react-native-svg";
 
+import SignupScreen from "../app/screens/auth/SignupScreen";
+import HomeScreen from "../app/screens/Main/HomeScreen";
+import LoginScreen from "../app/screens/auth/LoginScreen";
+import SearchScreen from "../app/screens/Main/ExploreScreen";
+import WishlistScreen from "../app/screens/Main/SavedScreen";
+import ProfileScreen from "../app/screens/Main/ProfileScreen";
+import SellScreen from "../app/screens/Main/SellPageScreen";
+
+const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-export default function TabNavigation() {
-    return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-        <Tab.Navigator
-            screenOptions={{
-                headerShown: false,
-                tabBarActiveTintColor: '#d7f2a5',
-                tabBarStyle: {
-                    backgroundColor: '#000', // Background color of the tab bar
-                    borderTopWidth: 0, // Remove the top border
-                    position: 'absolute', // Positioning
-                    height: 60, // Height of the tab bar
-                    bottom: 10,
-                    borderRadius: 25,
-                    paddingBottom: 10,
-                },
-                tabBarItemStyle: {
-                    height: 60, // Ensures tab items have enough space
-                    justifyContent: 'center', // Centers icon vertically
-                    alignItems: 'center', // Centers icon horizontally
-                  },
-                  tabBarIconStyle: {
-                    marginBottom: 0, // Removes any unnecessary bottom margin
-                  },
-                  tabBarLabelStyle: {
-                    fontSize: 12, // Adjust font size if needed
-                    marginBottom: 5, // Moves the label up slightly
-                  },
-            }}
-        >
-            <Tab.Screen
-                name="HomeScreen"
-                component={HomeScreen}
-                options={{
-                    tabBarLabel: 'Home', // Use tabBarLabel for the text
-                    tabBarIcon: ({ color, size }) => (
-                        <AntDesign name="home" size={size} color={color} /> // Only the icon
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="ExploreScreen"
-                component={ExploreScreen}
-                options={{
-                    tabBarLabel: 'Explore', // Use tabBarLabel for the text
-                    tabBarIcon: ({ color, size }) => (
-                        <AntDesign name="search1" size={size} color={color} /> // Only the icon
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="SellPageScreen"
-                component={SellPageScreen}
-                options={{
-                    tabBarLabel: 'Sell', // Use tabBarLabel for the text
-                    tabBarIcon: ({ color, size }) => (
-                        <MaterialIcons name="add-circle-outline" size={size} color={color} /> // Only the icon
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="SavedScreen"
-                component={SavedScreen}
-                options={{
-                    tabBarLabel: 'Wishlist', // Use tabBarLabel for the text
-                    tabBarIcon: ({ color, size }) => (
-                        <FontAwesome5 name="heart" size={size} color={color} /> // Only the icon
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="ProfileScreen"
-                component={ProfileScreen}
-                options={{
-                    tabBarLabel: 'Profile', // Use tabBarLabel for the text
-                    tabBarIcon: ({ color, size }) => (
-                        <AntDesign name="profile" size={size} color={color} /> // Only the icon
-                    ),
-                }}
-            />
-        </Tab.Navigator>
-        </GestureHandlerRootView>
-    );
+const CustomTabBarButton = ({
+  onPress,
+}: {
+  onPress?: (event: GestureResponderEvent) => void;
+}) => (
+  <TouchableOpacity style={styles.sellButton} onPress={onPress}>
+    <FontAwesome5 name="plus" size={24} color="white" />
+  </TouchableOpacity>
+);
+
+const CurvedTabBarBackground = () => {
+  return (
+    <View style={styles.svgContainer}>
+      <Svg width={75} height={61} viewBox="0 0 75 61">
+        <Path
+          d="M0 0h75v30c-15 15-45 15-75 0V0z"
+          fill="#000"
+        />
+      </Svg>
+    </View>
+  );
+};
+
+const BottomTabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarStyle: styles.tabBar,
+        tabBarShowLabel: false,
+        tabBarBackground: () => <CurvedTabBarBackground />, // Add curved background
+        tabBarIcon: ({ focused }) => {
+          let iconName: any;
+          let color = focused ? "#D7F2A5" : "white";
+
+          switch (route.name) {
+            case "Home":
+              iconName = "home";
+              break;
+            case "Search":
+              iconName = "search";
+              break;
+            case "Wishlist":
+              iconName = "heart";
+              break;
+            case "Profile":
+              iconName = "person";
+              break;
+          }
+
+          return <Ionicons name={iconName} size={24} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen
+        name="Sell"
+        component={SellScreen}
+        options={{
+          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+        }}
+      />
+      <Tab.Screen name="Wishlist" component={WishlistScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+};
+
+// ✅ HomeStack should NOT have NavigationContainer!
+export default function HomeStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+      <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      <Stack.Screen name="SignupScreen" component={SignupScreen} />
+    </Stack.Navigator>
+  );
 }
 
-// Styles for the tab items
 const styles = StyleSheet.create({
-    tabItem: {
-        backgroundColor: '#d7f2a5', // Background color for the tab item
-        borderRadius: 10, // Curved borders
-        paddingVertical: 10, // Adjusted vertical padding
-        paddingHorizontal: 15, // Adjusted horizontal padding
-        flexDirection: 'row', // Align items side by side
-        alignItems: 'center', // Center the icon and text vertically
-        justifyContent: 'center', // Center the icon and text horizontally
-        marginHorizontal: 5, // Space between tabs
-    },
-    tabLabel: {
-        color: 'black', // Text color
-        marginLeft: 5, // Space between icon and text
-        fontSize: 14, // Adjusted font size for better fit
-    },
+  tabBar: {
+    backgroundColor: "transparent",
+    borderTopWidth: 0,
+    height: 80,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  svgContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    backgroundColor: "#000",
+  },
+  sellButton: {
+    backgroundColor: "#D7F2A5",
+    borderRadius: 35,
+    height: 70,
+    width: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    bottom: 25, // Adjusted to match the first layout
+    alignSelf: "center",
+  },
 });
