@@ -1,9 +1,9 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { TouchableOpacity, StyleSheet, View, GestureResponderEvent } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 
 import SignupScreen from "../app/screens/auth/SignupScreen";
 import HomeScreen from "../app/screens/Main/HomeScreen";
@@ -16,20 +16,20 @@ import SellScreen from "../app/screens/Main/SellPageScreen";
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Floating "+" Button ABOVE the Navigation Bar
+// Floating "+" Button
 const CustomTabBarButton = ({ onPress }: { onPress?: (event: GestureResponderEvent) => void }) => (
   <TouchableOpacity style={styles.sellButton} onPress={onPress}>
     <FontAwesome5 name="plus" size={24} color="black" />
   </TouchableOpacity>
 );
 
-// SVG Curved Background for Bottom Tab Bar
+// Curved Bottom Bar Background
 const CurvedTabBarBackground = () => {
   return (
     <View style={styles.svgContainer}>
-      <Svg width={100} height={60} viewBox="0 40 100 80">
+      <Svg width={100} height={80} viewBox="0 0 100 80">
         <Path
-          d="M0 30 C20 0, 80 0, 100 30 V80 H0 Z"
+          d="M0 40 Q30 0, 50 0 Q70 0, 100 40 V80 H0 Z"
           fill="black"
         />
       </Svg>
@@ -47,25 +47,25 @@ const BottomTabNavigator = () => {
         tabBarBackground: () => <CurvedTabBarBackground />,
         headerShown: false,
         tabBarIcon: ({ focused }) => {
-          let iconName: any;
+          let iconName;
           let color = focused ? "#B1F041" : "white";
 
           switch (route.name) {
             case "Home":
-              iconName = "home";
+              iconName = <Ionicons name="home" size={24} color={color} />;
               break;
             case "Search":
-              iconName = "search";
+              iconName = <Ionicons name="search" size={24} color={color} />;
               break;
             case "Wishlist":
-              iconName = "heart";
+              iconName = <Ionicons name="heart" size={24} color={color} />;
               break;
             case "Profile":
-              iconName = "person";
+              iconName = <Ionicons name="person" size={24} color={color} />;
               break;
           }
 
-          return <Ionicons name={iconName} size={24} color={color} />;
+          return iconName;
         },
       })}
     >
@@ -95,23 +95,24 @@ export default function HomeStack() {
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: "transparent",
+    backgroundColor: "black",
     borderTopWidth: 0,
     height: 80,
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
+    elevation: 6,
   },
   svgContainer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: 90,
-    backgroundColor: "black",
+    height: 80,
   },
   sellButton: {
     backgroundColor: "#B1F041",
@@ -121,7 +122,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "absolute",
-    bottom: 80, // **Moved Up**
+    bottom: 50, // Aligned with the curve
     alignSelf: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });
