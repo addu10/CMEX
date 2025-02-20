@@ -27,11 +27,12 @@ const CustomTabBarButton = ({ onPress }: { onPress?: (event: GestureResponderEve
 const CurvedTabBarBackground = () => {
   return (
     <View style={styles.svgContainer}>
-      <Svg width={100} height={80} viewBox="0 0 100 80">
+      <Svg width={250} height={70} viewBox="0 0 250 70">
         <Path
-          d="M0 40 Q30 0, 50 0 Q70 0, 100 40 V80 H0 Z"
+          d="M0 80 L0 0 Q125 60, 250 0 L250 80 Z"
           fill="black"
         />
+        <Path d="M18  0 Q65 52, 110  0 Z" fill="#f6f6f6" />
       </Svg>
     </View>
   );
@@ -48,7 +49,7 @@ const BottomTabNavigator = () => {
         headerShown: false,
         tabBarIcon: ({ focused }) => {
           let iconName;
-          let color = focused ? "#B1F041" : "white";
+          let color = focused ? "#d7f2a5" : "white";
 
           switch (route.name) {
             case "Home":
@@ -100,34 +101,35 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: "black",
     borderTopWidth: 0,
-    height: 80,
+    height: 70,
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: -10, 
+    left: '35%',
+    right: '35%',
     elevation: 6,
+    borderTopLeftRadius: 15,  
+    borderTopRightRadius: 15,
+    overflow: "visible",
   },
   svgContainer: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom:-10, // 
+    left: '35%',
+    right: '35%',
     height: 80,
+    backgroundColor: "transparent",
   },
   sellButton: {
-    backgroundColor: "#B1F041",
+    backgroundColor: "#d7f2a5",
     borderRadius: 35,
     height: 70,
     width: 70,
     justifyContent: "center",
     alignItems: "center",
     position: "absolute",
-    bottom: 50, // Aligned with the curve
+    bottom: 53, 
     alignSelf: "center",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    elevation: 10,
   },
 });
+

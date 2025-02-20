@@ -13,7 +13,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f6f6f6', padding: 16 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: 'white', padding: 16 }}>
       <Header />
       <SearchBar />
       <ActionButtons />
