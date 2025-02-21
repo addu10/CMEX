@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { TouchableOpacity, StyleSheet, View, GestureResponderEvent } from "react-native";
+import { TouchableOpacity, StyleSheet, View, GestureResponderEvent, Animated } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { useNavigationState } from "@react-navigation/native";
 
 import SignupScreen from "../app/screens/auth/SignupScreen";
 import HomeScreen from "../app/screens/Main/HomeScreen";
@@ -16,36 +17,76 @@ import SellScreen from "../app/screens/Main/SellPageScreen";
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Floating "+" Button
-const CustomTabBarButton = ({ onPress }: { onPress?: (event: GestureResponderEvent) => void }) => (
-  <TouchableOpacity style={styles.sellButton} onPress={onPress}>
-    <FontAwesome5 name="plus" size={24} color="black" />
-  </TouchableOpacity>
-);
+const CustomTabBarButton = ({ onPress, setSvgVisible }: { onPress?: (event: GestureResponderEvent) => void, setSvgVisible: (visible: boolean) => void }) => {
+  const buttonAnim = useRef(new Animated.Value(1)).current; // Button starts visible
+  const currentRoute = useNavigationState((state) => state.routes[state.index]?.name);
 
-// Curved Bottom Bar Background
-const CurvedTabBarBackground = () => {
+  useEffect(() => {
+    if (currentRoute !== "Sell") {
+      // SVG appears first, then the button
+      Animated.timing(buttonAnim, {
+        toValue: 1,
+        duration: 300,
+        delay: 200, // Small delay for staggered effect
+        useNativeDriver: true,
+      }).start();
+      setSvgVisible(true);
+    }
+  }, [currentRoute]);
+
+  const handlePress = (event: GestureResponderEvent) => {
+    if (onPress) onPress(event);
+
+    // SVG disappears first, then the button
+    setSvgVisible(false);
+    setTimeout(() => {
+      Animated.timing(buttonAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 200); // Delay hiding the button after SVG
+  };
+
   return (
-    <View style={styles.svgContainer}>
-      <Svg width={250} height={70} viewBox="0 0 250 70">
-        <Path
-          d="M0 80 L0 0 Q125 60, 250 0 L250 80 Z"
-          fill="black"
-        />
-        <Path d="M18  0 Q65 52, 110  0 Z" fill="#f6f6f6" />
-      </Svg>
-    </View>
+    <Animated.View style={[styles.sellButton, { opacity: buttonAnim }]}>
+      <TouchableOpacity onPress={handlePress}>
+        <FontAwesome5 name="plus" size={24} color="black" />
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
-// Bottom Navigation Bar
+const CurvedTabBarBackground = ({ isVisible }: { isVisible: boolean }) => {
+  const svgAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(svgAnim, {
+      toValue: isVisible ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isVisible]);
+
+  return (
+    <Animated.View style={[styles.svgContainer, { opacity: svgAnim }]}>
+      <Svg width={250} height={70} viewBox="0 0 250 70">
+        <Path d="M0 80 L0 0 Q125 60, 250 0 L250 80 Z" fill="black" />
+        <Path d="M18  0 Q65 52, 110  0 Z" fill="#f6f6f6" />
+      </Svg>
+    </Animated.View>
+  );
+};
+
 const BottomTabNavigator = () => {
+  const [svgVisible, setSvgVisible] = useState(true);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarStyle: styles.tabBar,
         tabBarShowLabel: false,
-        tabBarBackground: () => <CurvedTabBarBackground />,
+        tabBarBackground: () => <CurvedTabBarBackground isVisible={svgVisible} />,
         headerShown: false,
         tabBarIcon: ({ focused }) => {
           let iconName;
@@ -76,7 +117,7 @@ const BottomTabNavigator = () => {
         name="Sell"
         component={SellScreen}
         options={{
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+          tabBarButton: (props) => <CustomTabBarButton {...props} setSvgVisible={setSvgVisible} />,
         }}
       />
       <Tab.Screen name="Wishlist" component={WishlistScreen} />
@@ -85,7 +126,6 @@ const BottomTabNavigator = () => {
   );
 };
 
-// Stack Navigator
 export default function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -96,7 +136,6 @@ export default function HomeStack() {
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: "black",
@@ -113,7 +152,7 @@ const styles = StyleSheet.create({
   },
   svgContainer: {
     position: "absolute",
-    bottom:-10, // 
+    bottom: -10, 
     left: '35%',
     right: '35%',
     height: 80,
@@ -132,4 +171,3 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 });
-
