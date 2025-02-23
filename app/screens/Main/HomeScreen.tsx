@@ -230,4 +230,4 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendRegular',
     color: '#666',
   },
-});
+}); 

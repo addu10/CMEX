@@ -1,63 +1,96 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import Header from '@/components/Header';
 import { globalStyles } from '../../../theme/styles'; // Adjust the path as necessary
-import { Colors } from '../../../theme/colors';
+import { Colors, styles } from '../../../theme/colors';
 
 interface Item {
   id: string;
   title: string;
 }
 
-const items: Item[] = [
-  { id: '1', title: 'Item 1' },
-  { id: '2', title: 'Item 2' },
-  { id: '3', title: 'Item 3' },
-  { id: '4', title: 'Item 4' },
-  { id: '5', title: 'Item 5' },
-  { id: '6', title: 'Item 6' },
-  // Add more items as needed
-];
+const ExploreScreen: React.FC = () => {
+  const [items, setItems] = useState<Item[]>([]);
+  const [popularItems, setPopularItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-const ExploreScreen = () => {
-  const renderItem = ({ item }: { item: Item }) => (
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('https://api.example.com/explore-items');
+      if (!response.ok) throw new Error('Failed to fetch data');
+      const data = await response.json();
+      setItems(data.items);
+      setPopularItems(data.popularItems);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
+  const renderItem = useCallback(({ item }: { item: Item }) => (
     <TouchableOpacity style={styles.itemContainer}>
       <Text style={styles.itemTitle}>{item.title}</Text>
     </TouchableOpacity>
-  );
+  ), []);
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={[styles.errorText, { color: 'red' }]}>Error: {error}</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f6f6f6', padding: 16 }}>
+    <ScrollView style={styles.container}>
       <Header />
       <Text style={globalStyles.title}>Explore Marketplace</Text>
+
+      <Text style={styles.sectionTitle}>Popular Products</Text>
+      <FlatList
+        data={popularItems}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
+      />
+
+      <Text style={styles.sectionTitle}>All Products</Text>
       <FlatList
         data={items}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
-        numColumns={2} // Set the number of columns to 2
-        columnWrapperStyle={styles.row} // Optional: style for the row
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListEmptyComponent={<Text style={styles.emptyText}>No items available</Text>}
       />
-    </View>
+    </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  itemContainer: {
-    flex: 1, // Allow the item to take up space in the row
-    padding: 16,
-    margin: 8, // Add margin to create space between items
-    backgroundColor: Colors.inputBackground,
-    borderRadius: 8,
-    borderColor: Colors.border,
-    borderWidth: 1,
-  },
-  itemTitle: {
-    fontSize: 18,
-    color: Colors.secondary,
-  },
-  row: {
-    justifyContent: 'space-between', // Optional: space between items in the row
-  },
-});
 
 export default ExploreScreen;
