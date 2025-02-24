@@ -63,7 +63,7 @@ const CurvedTabBarBackground = ({ isVisible }: { isVisible: boolean }) => {
   useEffect(() => {
     Animated.timing(svgAnim, {
       toValue: isVisible ? 1 : 0,
-      duration: 300,
+      duration: 200,
       useNativeDriver: true,
     }).start();
   }, [isVisible]);
@@ -90,7 +90,7 @@ const BottomTabNavigator = () => {
         headerShown: false,
         tabBarIcon: ({ focused }) => {
           let iconName;
-          let color = focused ? "#d7f2a5" : "white";
+          let color = focused ? "#b1f03d" : "white";
 
           switch (route.name) {
             case "Home":
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   sellButton: {
-    backgroundColor: "#d7f2a5",
+    backgroundColor: "#b1f03d",
     borderRadius: 35,
     height: 70,
     width: 70,

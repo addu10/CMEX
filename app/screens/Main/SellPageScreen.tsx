@@ -10,11 +10,12 @@ import {
   StyleSheet
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
-import { app } from '../../../FirebaseConfig';
+import { supabase } from '../../../supabaseConfig';
 import PickerComponent from '@/components/PickerComponent';
 import { Colors } from '../../../assets/styles/colors'; // Keeping your original colors
 import Header from '@/components/Header';
+import { db } from '@/FirebaseConfig';
+import { getDocs, collection } from 'firebase/firestore';
 
 interface Category {
   id: string;
@@ -33,8 +34,7 @@ const SellPageScreen = () => {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [listingType, setListingType] = useState('sell');
-
-  const db = getFirestore(app);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     getCategoryList();
@@ -69,8 +69,95 @@ const SellPageScreen = () => {
     }
   };
 
-  const onSubmit = () => {
-    console.log('Form submitted');
+  const uploadImageToSupabase = async (uri: string): Promise<string | null> => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const fileName = `${Date.now()}-listing-image`;
+      const filePath = `listings/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('listings')
+        .upload(filePath, blob);
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('listings')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
+  const onSubmit = async () => {
+    if (!image || !title || !description || !price || !selectedCategory) {
+      setUploadError('Please fill in all required fields and add an image');
+      return;
+    }
+
+    setLoading(true);
+    setUploadError(null);
+
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Upload image to Supabase storage
+      const imageUrl = await uploadImageToSupabase(image);
+      if (!imageUrl) {
+        throw new Error('Failed to upload image');
+      }
+
+      // Save listing details to Supabase database
+      const { data, error } = await supabase
+        .from('listings')
+        .insert([
+          {
+            title,
+            description,
+            price: parseFloat(price),
+            category_id: selectedCategory,
+            category_name: selectedCategoryName,
+            duration_value: durationValue ? parseFloat(durationValue) : null,
+            duration_unit: selectedDuration,
+            image_url: imageUrl,
+            listing_type: listingType,
+            user_id: user.id,
+            created_at: new Date().toISOString(),
+          }
+        ])
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setPrice('');
+      setDurationValue('');
+      setImage(null);
+      setUploadError(null);
+      
+      // You can add navigation here if needed
+      // navigation.navigate('Home');
+      
+    } catch (error: any) {
+      console.error('Error creating listing:', error);
+      setUploadError(error.message || 'Failed to create listing');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -88,6 +175,9 @@ const SellPageScreen = () => {
         </View>
 
         <View style={styles.formContainer}>
+          {uploadError && (
+            <Text style={styles.errorText}>{uploadError}</Text>
+          )}
           <PickerComponent
             selectedValue={selectedCategory}
             onValueChange={(value) => {
@@ -237,14 +327,14 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   submitButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: '#d7f2a5',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
   },
   submitButtonText: {
-    color: '#FFF',
+    color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -260,6 +350,14 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 50,
+  },
+  topSpacing: {
+    height: 10,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });
 

@@ -6,10 +6,12 @@ export const globalStyles = StyleSheet.create({
   container: {
     flexGrow: 1,
     alignItems: 'center',
-    paddingTop: 100,
+    paddingTop: 150,
     paddingHorizontal: 20,
     gap: 10,
     paddingBottom: 60,
+    marginBottom: 50,
+
   },
   logoContainer: {
     alignItems: 'center',

@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   saleBox: {
     height: 150,
-    backgroundColor: '#d7f2a5',
+    backgroundColor: '#b1f03d',
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',

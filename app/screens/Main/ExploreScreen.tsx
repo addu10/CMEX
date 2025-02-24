@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 const { width } = Dimensions.get('window');
 
 export const LocalColors = {
-    primary: '#d7f2a5',
+    primary: '#b1f03d',
     secondary: '#333',
     background: '#fff',
     inputBackground: '#f9f9f9',
@@ -119,7 +119,7 @@ const ExploreScreen: React.FC = () => {
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
-        ListFooterComponent={<View style={{ height: 40 }} />} // More space after last card
+        ListFooterComponent={<View style={{ height: 40, bottom: 50 }} />} // More space after last card
       />
     </ScrollView>
   );
@@ -200,6 +200,9 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: LocalColors.primary,
     marginTop: 6,
+  },
+  bottomSpacing: {
+    height: 150,
   },
 });
 
