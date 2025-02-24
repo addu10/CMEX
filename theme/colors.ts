@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 export const Colors = {
-    primary: '#d7f2a5',  // Light green for buttons
+    primary: '#b1f03d',  // Light green for buttons
     secondary: '#333',    // Dark gray for text
     background: '#fff',   // White background
     inputBackground: '#f9f9f9', // Light gray for input fields

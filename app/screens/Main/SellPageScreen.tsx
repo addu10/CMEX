@@ -23,7 +23,7 @@ interface ImagePickerResult {
   }>;
 }
 
-export function SellPageScreen() {
+export default function SellPageScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
