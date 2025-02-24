@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
-import Header from '@/components/Header';
-import { globalStyles } from '../../../theme/styles'; // Adjust the path as necessary
-import { Colors, styles } from '../../../theme/colors';
+import { useAppFonts } from '../../../assets/fonts/fonts';
+import Header from '../../../components/Header';
+import { styles } from '../../../assets/styles/styles';
+import { Colors } from '../../../assets/styles/colors';
 
 interface Item {
   id: string;
@@ -10,6 +11,7 @@ interface Item {
 }
 
 const ExploreScreen: React.FC = () => {
+  const fontsLoaded = useAppFonts();
   const [items, setItems] = useState<Item[]>([]);
   const [popularItems, setPopularItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -42,52 +44,60 @@ const ExploreScreen: React.FC = () => {
   };
 
   const renderItem = useCallback(({ item }: { item: Item }) => (
-    <TouchableOpacity style={styles.itemContainer}>
-      <Text style={styles.itemTitle}>{item.title}</Text>
+    <TouchableOpacity style={styles.explore.itemContainer}>
+      <Text style={styles.explore.itemTitle}>{item.title}</Text>
     </TouchableOpacity>
   ), []);
 
+  if (!fontsLoaded) return null;
   if (loading) {
     return (
-      <View style={styles.loaderContainer}>
+      <View style={styles.explore.loaderContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
-
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={[styles.errorText, { color: 'red' }]}>Error: {error}</Text>
+      <View style={styles.explore.errorContainer}>
+        <Text style={styles.explore.errorText}>Error: {error}</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.explore.container}>
       <Header />
-      <Text style={globalStyles.title}>Explore Marketplace</Text>
+      <Text style={styles.explore.sectionTitle}>Explore Marketplace</Text>
 
-      <Text style={styles.sectionTitle}>Popular Products</Text>
+      <Text style={styles.explore.sectionTitle}>Popular Products</Text>
       <FlatList
         data={popularItems}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalList}
+        contentContainerStyle={styles.explore.horizontalList}
       />
 
-      <Text style={styles.sectionTitle}>All Products</Text>
+      <Text style={styles.explore.sectionTitle}>All Products</Text>
       <FlatList
         data={items}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        columnWrapperStyle={styles.row}
+        columnWrapperStyle={styles.explore.row}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={<Text style={styles.emptyText}>No items available</Text>}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+          />
+        }
+        ListEmptyComponent={
+          <Text style={styles.explore.emptyText}>No items available</Text>
+        }
       />
     </ScrollView>
   );

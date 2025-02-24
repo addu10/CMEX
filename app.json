@@ -36,9 +36,10 @@
       [
         "expo-image-picker",
         {
-          "photosPermission" : "The app accesses your photos"
+          "photosPermission": "The app accesses your photos"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
