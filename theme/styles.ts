@@ -86,3 +86,33 @@ export const globalStyles = StyleSheet.create({
     backgroundColor: Colors.inputBackground,
   },
 });
+
+export const profileStyles = StyleSheet.create({
+  container: {
+    padding: 20,
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  profileSection: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  imageContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  profilePicture: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  name: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginVertical: 10,
+  },
+  email: {
+    fontSize: 18,
+    color: '#888',
+  },
+});

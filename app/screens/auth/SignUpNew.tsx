@@ -29,30 +29,37 @@ const SignupScreen = () => {
 
   const handleChange = (key: keyof typeof formData, value: string) => {
     setFormData({ ...formData, [key]: value });
+    return Promise.resolve(true);
   };
 
   const [currentStep, setCurrentStep] = useState(1);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  const nextStep = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setCurrentStep(currentStep + 1);
-      fadeIn();
+  const nextStep = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setCurrentStep(currentStep + 1);
+        fadeIn();
+        resolve(true);
+      });
     });
   };
 
-  const prevStep = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setCurrentStep(currentStep - 1);
-      fadeIn();
+  const prevStep = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setCurrentStep(currentStep - 1);
+        fadeIn();
+        resolve(true);
+      });
     });
   };
 
@@ -63,23 +70,22 @@ const SignupScreen = () => {
       useNativeDriver: true,
     }).start();
   };
-
-  const handleSignup = () => {
+  const handleSignup = (): Promise<boolean> => {
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
-      return;
+      return Promise.resolve(false);
     }
     console.log(formData);
 
     if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
       alert('Error, All fields are required!');
-      return;
+      return Promise.resolve(false);
     }
 
     /* Navigate to CollegeVerificationScreen with the data
     navigation.navigate('CollegeVerification', {
       formData,
     });*/
+    return Promise.resolve(true);
   };
 
   return (

@@ -12,7 +12,7 @@ import LoginScreen from "../app/screens/auth/LoginScreen";
 import SearchScreen from "../app/screens/Main/ExploreScreen";
 import WishlistScreen from "../app/screens/Main/SavedScreen";
 import ProfileScreen from "../app/screens/Main/ProfileScreen";
-import SellScreen from "../app/screens/Main/SellPageScreen";
+import SellPageScreen from "../app/screens/Main/SellPageScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -115,7 +115,7 @@ const BottomTabNavigator = () => {
       <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen
         name="Sell"
-        component={SellScreen}
+        component={SellPageScreen}
         options={{
           tabBarButton: (props) => <CustomTabBarButton {...props} setSvgVisible={setSvgVisible} />,
         }}
