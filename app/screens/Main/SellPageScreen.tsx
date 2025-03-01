@@ -12,7 +12,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { app } from '../../../FirebaseConfig';
-import { supabase } from '../../../supabaseConfig';
+import { supabase } from '../../../lib/supabase';
 import { styles } from '../../../assets/styles/styles';
 import { Colors } from '../../../assets/styles/colors';
 

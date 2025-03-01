@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack'; // Import the StackNavigationProp
 import { RootStackParamList } from '../../../types/types'; // Import your types
 import * as ImagePicker from "expo-image-picker";
+import { supabase } from '../../../lib/supabase';
 
 type HeaderNavigationProp = StackNavigationProp<RootStackParamList, 'SignupScreen'>;
 
@@ -30,11 +31,12 @@ const SignupScreen = () => {
     username: '',
     password: '',
     confirmPassword: '',
+    studentIdImage: '',
   });
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.IMAGE,
       allowsEditing: true,
       aspect: [9, 16],
       quality: 1,
@@ -89,23 +91,77 @@ const SignupScreen = () => {
       useNativeDriver: true,
     }).start();
   };
-  const handleSignup = (): Promise<boolean> => {
-    if (formData.password !== formData.confirmPassword) {
-      return Promise.resolve(false);
-    }
-    console.log(formData);
 
-    if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
-      alert('Error, All fields are required!');
-      return Promise.resolve(false);
+  const uploadImageToSupabase = async (uri: string) => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const fileExt = uri.split('.').pop();
+      const fileName = `${formData.username}-${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('student_id_images')
+        .upload(fileName, blob);
+  
+      if (error) {
+        throw error;
+      }
+  
+      return supabase.storage.from('student_id_images').getPublicUrl(fileName).data.publicUrl;
+    } catch (error) {
+      console.error('Image Upload Error:', error);
+      return null;
     }
-
-    /* Navigate to CollegeVerificationScreen with the data
-    navigation.navigate('CollegeVerification', {
-      formData,
-    });*/
-    return Promise.resolve(true);
   };
+  
+
+  const handleSignup = async () => {
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+  
+    if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
+      alert('All fields are required!');
+      return;
+    }
+  
+    try {
+      let studentIdImageUrl = null;
+      if (studentIdImage) {
+        studentIdImageUrl = await uploadImageToSupabase(studentIdImage);
+      }
+  
+      const { data, error } = await supabase
+        .from('users')
+        .insert([
+          {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            cat_reg_no: formData.catRegNo,
+            phone_no: formData.phoneNo,
+            department: formData.department,
+            username: formData.username,
+            password: formData.password,
+            student_id_image: studentIdImageUrl,
+          },
+        ]);
+  
+      if (error) {
+        throw error;
+      }
+  
+      alert('Signup successful!');
+      navigation.navigate('LoginScreen'); // Redirect user after signup
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`Signup failed: ${error.message}`);
+      } else {
+        alert('An unknown error occurred during signup.');
+      }
+    }
+  };
+  
 
   return (
     <ScrollView contentContainerStyle={globalStyles.container}>
