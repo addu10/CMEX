@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ScrollView, Animated, Text, StyleSheet, TouchableOpacity, Image, View } from 'react-native';
+import { ScrollView, Animated, Text, StyleSheet, TouchableOpacity, Image, View, Platform } from 'react-native';
 import { globalStyles } from '../../../theme/styles';
 import Logo from '../../../components/Logo';
 import InputField from '../../../components/InputField';
@@ -8,20 +8,20 @@ import BackButton from '../../../components/BackButton';
 import PickerComponent from '../../../components/PickerComponent';
 import UploadButton from '../../../components/UploadButton';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack'; // Import the StackNavigationProp
-import { RootStackParamList } from '../../../types/types'; // Import your types
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../../types/types';
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import { supabase } from '../../../lib/supabase';
 
 type HeaderNavigationProp = StackNavigationProp<RootStackParamList, 'SignupScreen'>;
-
-
 
 const SignupScreen = () => {
   const navigation = useNavigation<HeaderNavigationProp>();
   
   const [studentIdUploaded, setStudentIdUploaded] = useState(false);
   const [studentIdImage, setStudentIdImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -36,10 +36,10 @@ const SignupScreen = () => {
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.IMAGE,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
       allowsEditing: true,
       aspect: [9, 16],
-      quality: 1,
+      quality: 0.8,
     });
 
     if (!result.canceled) {
@@ -92,29 +92,121 @@ const SignupScreen = () => {
     }).start();
   };
 
-  const uploadImageToSupabase = async (uri: string) => {
-    try {
+  // Helper function to convert file URI to blob
+  const uriToBlob = async (uri: string): Promise<Blob> => {
+    // On Android, the file:// path can be sent directly to the fetch API
+    // On iOS, we need to read the file and create a blob
+    if (Platform.OS === 'ios') {
       const response = await fetch(uri);
-      const blob = await response.blob();
-      const fileExt = uri.split('.').pop();
-      const fileName = `${formData.username}-${Date.now()}.${fileExt}`;
+      return await response.blob();
+    } else {
+      // For Android
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = function() {
+          resolve(xhr.response);
+        };
+        xhr.onerror = function() {
+          reject(new Error('uriToBlob failed'));
+        };
+        xhr.responseType = 'blob';
+        xhr.open('GET', uri, true);
+        xhr.send(null);
+      });
+    }
+  };
+
+  const uploadImageToSupabase = async (uri: string) => {
+    setIsUploading(true);
+    try {
+      if (!uri) return null;
       
-      const { data, error } = await supabase.storage
-        .from('student_id_images')
-        .upload(fileName, blob);
-  
-      if (error) {
-        throw error;
+      // Get file extension
+      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `${formData.username.replace(/\s+/g, '-')}-${Date.now()}.${fileExt}`;
+      
+      console.log(`Starting upload for file: ${fileName}`);
+      console.log(`URI: ${uri}`);
+      
+      // For React Native, we need a different approach depending on platform
+      try {
+        // Convert URI to blob
+        const fileBlob = await uriToBlob(uri);
+        console.log(`Created blob of size: ${fileBlob.size} bytes`);
+        
+        // Upload to Supabase using their storage API
+        const { data, error } = await supabase.storage
+          .from('student_id_images')
+          .upload(fileName, fileBlob, {
+            contentType: `image/${fileExt}`,
+            upsert: true
+          });
+        
+        if (error) {
+          console.error('Supabase storage error:', error);
+          throw error;
+        }
+        
+        console.log('Upload successful:', data);
+        
+        // Get the public URL
+        const { data: urlData } = supabase.storage
+          .from('student_id_images')
+          .getPublicUrl(fileName);
+          
+        console.log('Public URL:', urlData.publicUrl);
+        return urlData.publicUrl;
+      } catch (uploadError) {
+        console.error('Upload attempt failed:', uploadError);
+        
+        // Try alternative method for Android
+        if (Platform.OS === 'android') {
+          console.log('Trying alternative upload method for Android...');
+          
+          // Read the file
+          const fileContent = await FileSystem.readAsStringAsync(uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          
+          // Convert base64 to blob
+          const base64Data = `data:image/${fileExt};base64,${fileContent}`;
+          const response = await fetch(base64Data);
+          const blob = await response.blob();
+          
+          // Upload to Supabase
+          const { data, error } = await supabase.storage
+            .from('student_id_images')
+            .upload(fileName, blob, {
+              contentType: `image/${fileExt}`,
+              upsert: true
+            });
+            
+          if (error) {
+            console.error('Alternative upload method error:', error);
+            throw error;
+          }
+          
+          // Get the public URL
+          const { data: urlData } = supabase.storage
+            .from('student_id_images')
+            .getPublicUrl(fileName);
+            
+          console.log('Alternative upload successful, URL:', urlData.publicUrl);
+          return urlData.publicUrl;
+        }
+        
+        // If we've reached here, all attempts have failed
+        throw uploadError;
       }
-  
-      return supabase.storage.from('student_id_images').getPublicUrl(fileName).data.publicUrl;
     } catch (error) {
       console.error('Image Upload Error:', error);
+      alert(`Image upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
+    } finally {
+      setIsUploading(false);
     }
   };
   
-
   const handleSignup = async () => {
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
@@ -125,11 +217,16 @@ const SignupScreen = () => {
       alert('All fields are required!');
       return;
     }
-  
+    
     try {
       let studentIdImageUrl = null;
+      
       if (studentIdImage) {
         studentIdImageUrl = await uploadImageToSupabase(studentIdImage);
+        if (!studentIdImageUrl) {
+          alert('Failed to upload student ID image. Please try again.');
+          return;
+        }
       }
   
       const { data, error } = await supabase
@@ -142,7 +239,7 @@ const SignupScreen = () => {
             phone_no: formData.phoneNo,
             department: formData.department,
             username: formData.username,
-            password: formData.password,
+            password: formData.password, // Note: In production, you should hash passwords
             student_id_image: studentIdImageUrl,
           },
         ]);
@@ -152,7 +249,7 @@ const SignupScreen = () => {
       }
   
       alert('Signup successful!');
-      navigation.navigate('LoginScreen'); // Redirect user after signup
+      navigation.navigate('LoginScreen');
     } catch (error) {
       if (error instanceof Error) {
         alert(`Signup failed: ${error.message}`);
@@ -161,7 +258,6 @@ const SignupScreen = () => {
       }
     }
   };
-  
 
   return (
     <ScrollView contentContainerStyle={globalStyles.container}>
@@ -222,13 +318,18 @@ const SignupScreen = () => {
                     source={{ uri: studentIdImage }} 
                     style={styles.imagePreview} 
                   />
-                  <Text style={styles.successText}>Uploaded successfully ✓</Text>
+                  <Text style={styles.successText}>Image selected ✓</Text>
                 </View>
               )}
+              {isUploading && <Text style={styles.uploadingText}>Uploading image...</Text>}
             </View>
             <View style={styles.buttonContainer}>
               <BackButton onPress={prevStep} />
-              <Button title="Sign Up" onPress={handleSignup} />
+              <Button 
+                title={isUploading ? "Processing..." : "Sign Up"} 
+                onPress={handleSignup}
+                disabled={isUploading}
+              />
             </View>
           </>
         )}
@@ -236,6 +337,7 @@ const SignupScreen = () => {
     </ScrollView>
   );
 };
+
 const styles = StyleSheet.create({
   uploadBox: {
     width: 200,
@@ -285,5 +387,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 5,
   },
+  uploadingText: {
+    color: '#2196F3',
+    fontSize: 16,
+    fontWeight: '500',
+    marginTop: 10,
+    textAlign: 'center',
+  }
 });
+
 export default SignupScreen;
