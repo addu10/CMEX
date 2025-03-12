@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import Header from '../../../components/Header';
 import SaleBanner from '../../../components/SaleBanner';
 import ItemCarousel from '../../../components/ItemCarousel';
+import FeaturedDealsSlider from '../../../components/FeaturedDealsSlider'
 import { Ionicons } from '@expo/vector-icons';
 
 SplashScreen.preventAutoHideAsync();
@@ -68,13 +69,10 @@ export default function HomeScreen() {
           {actions.map((item) => renderActionButton({ item }))}
         </View>
 
-
-        {/* Placeholder for Sale Products (Scrolling Horizontally) */}
+        {/* Featured Deals - Now with horizontal scrolling */}
         <View style={styles.salePlaceholder}>
           <Text style={styles.saleText}>Featured Deals</Text>
-          <View style={styles.saleBox}>
-            <Text style={styles.salePlaceholderText}>Products will appear here</Text>
-          </View>
+          <FeaturedDealsSlider />
         </View>
 
         {/* Shop by Category */}
@@ -166,17 +164,6 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 8,
   },
-  saleBox: {
-    height: 150,
-    backgroundColor: '#b1f03d',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  salePlaceholderText: {
-    fontSize: 16,
-    color: '#777',
-  },
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'LexendBold',
@@ -230,4 +217,4 @@ const styles = StyleSheet.create({
     fontFamily: 'LexendRegular',
     color: '#666',
   },
-}); 
+});
