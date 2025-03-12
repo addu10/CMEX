@@ -8,7 +8,7 @@ export default function CollegeVerificationScreen({ route }: any) {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
-  
+
   const { formData } = route.params; // Get FormData from route params
 
   // Access FormData values
@@ -98,3 +98,5 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 });
+
+

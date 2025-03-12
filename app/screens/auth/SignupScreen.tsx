@@ -10,12 +10,12 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../../types/types';
 import { supabase } from '../../../lib/supabase';
-
+import { router } from 'expo-router';
 type HeaderNavigationProp = StackNavigationProp<RootStackParamList, 'SignupScreen'>;
 
 const SignupScreen = () => {
   const navigation = useNavigation<HeaderNavigationProp>();
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -71,23 +71,23 @@ const SignupScreen = () => {
       useNativeDriver: true,
     }).start();
   };
-  
+
   const handleSignup = async () => {
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
       return;
     }
-  
+
     if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
       alert('All fields are required!');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       console.log('Submitting user data to Supabase...');
-      
+
 
       const userData = {
         first_name: formData.firstName,
@@ -98,22 +98,22 @@ const SignupScreen = () => {
         username: formData.username,
         password: formData.password, // Note: In production, you should hash passwords
       };
-      
+
       console.log('User data being sent:', userData);
-      
+
       // Using the Supabase client to insert data
       const { data, error } = await supabase
         .from('users')
         .insert([userData]);
-  
+
       if (error) {
         console.error('Supabase error:', error);
         throw error;
       }
-  
+
       console.log('Signup successful!');
       alert('Signup successful!');
-      navigation.navigate('LoginScreen');
+      router.push('/screens/auth/router/login')
     } catch (error) {
       console.error('Signup error details:', error);
       if (error instanceof Error) {
@@ -170,8 +170,8 @@ const SignupScreen = () => {
             <InputField placeholder="Confirm Password" value={formData.confirmPassword} secureTextEntry onChangeText={(text) => handleChange('confirmPassword', text)} />
             <View style={styles.buttonContainer}>
               <BackButton onPress={prevStep} />
-              <Button 
-                title={isSubmitting ? "Processing..." : "Sign Up"} 
+              <Button
+                title={isSubmitting ? "Processing..." : "Sign Up"}
                 onPress={handleSignup}
                 disabled={isSubmitting}
               />
