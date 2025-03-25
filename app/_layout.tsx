@@ -1,6 +1,12 @@
 import React from 'react';
-import TabNavigation from '@/navigation/TabNavigation';
+import { Stack } from 'expo-router';
 
 export default function Layout() {
-  return <TabNavigation />;
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    />
+  );
 }

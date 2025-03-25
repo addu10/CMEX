@@ -1,22 +1,21 @@
+{/*
+
+// screens/Auth/SignupScreen.tsx
 import React, { useState, useRef } from 'react';
-import { ScrollView, Animated, Text, StyleSheet, View } from 'react-native';
+import { ScrollView, Animated, Text } from 'react-native';
 import { globalStyles } from '../../../theme/styles';
 import Logo from '../../../components/Logo';
 import InputField from '../../../components/InputField';
 import Button from '../../../components/Button';
-import BackButton from '../../../components/BackButton';
 import PickerComponent from '../../../components/PickerComponent';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../../types/types';
-import { supabase } from '../../../lib/supabase';
-import { router } from 'expo-router';
+import { StackNavigationProp } from '@react-navigation/stack'; // Import the StackNavigationProp
+import { RootStackParamList } from '../../../types/types'; // Import your types
+
 type HeaderNavigationProp = StackNavigationProp<RootStackParamList, 'SignupScreen'>;
 
 const SignupScreen = () => {
   const navigation = useNavigation<HeaderNavigationProp>();
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -30,37 +29,30 @@ const SignupScreen = () => {
 
   const handleChange = (key: keyof typeof formData, value: string) => {
     setFormData({ ...formData, [key]: value });
-    return Promise.resolve(true);
   };
 
   const [currentStep, setCurrentStep] = useState(1);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  const nextStep = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        setCurrentStep(currentStep + 1);
-        fadeIn();
-        resolve(true);
-      });
+  const nextStep = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentStep(currentStep + 1);
+      fadeIn();
     });
   };
 
-  const prevStep = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        setCurrentStep(currentStep - 1);
-        fadeIn();
-        resolve(true);
-      });
+  const prevStep = () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentStep(currentStep - 1);
+      fadeIn();
     });
   };
 
@@ -72,73 +64,24 @@ const SignupScreen = () => {
     }).start();
   };
 
-  const handleSignup = async () => {
+  const handleSignup = () => {
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      alert('Passwords do not match!');
       return;
     }
+    console.log(formData);
 
     if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
-      alert('All fields are required!');
+      alert('Error, All fields are required!');
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      console.log('Submitting user data to Supabase...');
-
-
-      const userData = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        cat_reg_no: formData.catRegNo,
-        phone_no: formData.phoneNo,
-        department: formData.department,
-        username: formData.username,
-        password: formData.password, // Note: In production, you should hash passwords
-      };
-
-      console.log('User data being sent:', userData);
-
-      // Check for internet connection using a simpler approach
-      try {
-        await fetch('https://rqcuuptdadfsojgtepna.supabase.co');
-      } catch (networkError) {
-        alert('Network connection issue. Please check your internet connection and try again.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Using the Supabase client to insert data
-      const { data, error } = await supabase
-        .from('users')
-        .insert([userData]);
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      console.log('Signup successful!');
-      alert('Signup successful!');
-      router.push('/screens/auth/router/login')
-    } catch (error) {
-      console.error('Signup error details:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('Network request failed')) {
-          alert('Network connection issue. Please check your internet connection and try again.');
-        } else {
-          alert(`Signup failed: ${error.message}`);
-        }
-      } else {
-        alert('An unknown error occurred during signup.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    /* Navigate to CollegeVerificationScreen with the data
+    navigation.navigate('CollegeVerification', {
+      formData,
+    });*/
   };
-
+{/*
   return (
     <ScrollView contentContainerStyle={globalStyles.container}>
       <Logo />
@@ -170,10 +113,8 @@ const SignupScreen = () => {
                 { label: 'ME', value: 'ME' },
               ]}
             />
-            <View style={styles.buttonContainer}>
-              <BackButton onPress={prevStep} />
-              <Button title="Continue" onPress={nextStep} />
-            </View>
+            <Button title="Back" onPress={prevStep} />
+            <Button title="Continue" onPress={nextStep} />
           </>
         )}
         {currentStep === 3 && (
@@ -181,14 +122,8 @@ const SignupScreen = () => {
             <InputField placeholder="Username" value={formData.username} onChangeText={(text) => handleChange('username', text)} />
             <InputField placeholder="Set Password" value={formData.password} secureTextEntry onChangeText={(text) => handleChange('password', text)} />
             <InputField placeholder="Confirm Password" value={formData.confirmPassword} secureTextEntry onChangeText={(text) => handleChange('confirmPassword', text)} />
-            <View style={styles.buttonContainer}>
-              <BackButton onPress={prevStep} />
-              <Button
-                title={isSubmitting ? "Processing..." : "Sign Up"}
-                onPress={handleSignup}
-                disabled={isSubmitting}
-              />
-            </View>
+            <Button title="Back" onPress={prevStep} />
+            <Button title="Sign Up" onPress={handleSignup} />
           </>
         )}
       </Animated.View>
@@ -196,15 +131,5 @@ const SignupScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 20,
-    marginTop: 10,
-  }
-});
-
 export default SignupScreen;
+*/}
