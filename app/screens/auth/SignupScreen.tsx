@@ -101,6 +101,15 @@ const SignupScreen = () => {
 
       console.log('User data being sent:', userData);
 
+      // Check for internet connection using a simpler approach
+      try {
+        await fetch('https://rqcuuptdadfsojgtepna.supabase.co');
+      } catch (networkError) {
+        alert('Network connection issue. Please check your internet connection and try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Using the Supabase client to insert data
       const { data, error } = await supabase
         .from('users')
@@ -117,7 +126,11 @@ const SignupScreen = () => {
     } catch (error) {
       console.error('Signup error details:', error);
       if (error instanceof Error) {
-        alert(`Signup failed: ${error.message}`);
+        if (error.message.includes('Network request failed')) {
+          alert('Network connection issue. Please check your internet connection and try again.');
+        } else {
+          alert(`Signup failed: ${error.message}`);
+        }
       } else {
         alert('An unknown error occurred during signup.');
       }
