@@ -1,78 +1,63 @@
 // LoginForm.tsx
-import React, { useState } from 'react';
-import { View, Alert } from 'react-native';
-import { router } from 'expo-router';
-import { supabase } from '../lib/supabase'; // Adjust the path as needed
+import React, { useState, useContext, useEffect } from 'react';
+import { View, Alert, StyleSheet, Text } from 'react-native';
+import { supabase } from '../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import InputField from './InputField';
 import Button from './Button';
-import { globalStyles } from '../theme/styles';
-
+import { AuthContext } from '../app/_layout';
 
 const LoginForm = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { setIsAuthenticated } = useContext(AuthContext);
+
+  useEffect(() => {
+    console.log('[LoginForm Debug] LoginForm component mounted');
+  }, []);
+
+  console.log('[LoginForm Debug] Rendering LoginForm');
 
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert('Error', 'Please enter both username and password');
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Direct query to your custom users table in public schema
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', username)
-        .limit(1);
+      console.log('[Login Debug] Attempting login with email:', email);
+      
+      // Use Supabase Auth instead of direct table query
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-      console.log('Query response:', { data, error });
+      console.log('[Login Debug] Auth response:', data ? 'Session exists' : 'No session');
 
       if (error) {
-        console.error('Database error:', error);
-        Alert.alert('Login Failed', 'Database error occurred');
+        console.error('[Login Debug] Authentication error:', error);
+        Alert.alert('Login Failed', error.message);
         return;
       }
 
-      if (!data || data.length === 0) {
-        Alert.alert('Login Failed', 'Invalid username or password');
+      if (!data.session) {
+        console.log('[Login Debug] No session returned');
+        Alert.alert('Login Failed', 'Could not establish session');
         return;
       }
 
-      const user = data[0];
-      if (user.password === password) {
-        // Store the user data in local state or context
-        // Instead of using supabase.auth, we'll store the session ourselves
-        try {
-          // You might want to use AsyncStorage or similar for persistence
-          const sessionData = {
-            id: user.id,
-            username: user.username,
-            // Add other user fields you want to store
-          };
-
-          // Navigate to home screen
-          Alert.alert('Success', 'Login successful!', [
-            {
-              text: 'OK',
-              onPress: () => {
-                // You might want to set this data in a global state manager
-                router.push('/screens/auth/router/home');
-              }
-            }
-          ]);
-        } catch (sessionError) {
-          console.error('Session storage error:', sessionError);
-          Alert.alert('Error', 'Failed to store session data');
-        }
-      } else {
-        Alert.alert('Login Failed', 'Invalid username or password');
-      }
+      console.log('[Login Debug] Login successful, session established');
+      
+      // Supabase handles token storage, just update auth state
+      setIsAuthenticated(true);
+      
+      console.log('[Login Debug] Authentication state updated, redirecting...');
     } catch (error) {
-      console.error('Login error details:', error);
+      console.error('[Login Debug] Login error details:', error);
       if (error instanceof Error) {
         Alert.alert('Login Failed', error.message);
       } else {
@@ -84,23 +69,55 @@ const LoginForm = () => {
   };
 
   return (
-    <View style={globalStyles.stepContainer}>
+    <View style={styles.container}>
+      <Text style={styles.formTitle}>Log In</Text>
       <InputField
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
         secureTextEntry={false}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={styles.input}
       />
       <InputField
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry={true}
+        style={styles.input}
       />
-      <Button title="Login" onPress={handleLogin} />
-
+      <Button 
+        title={isLoading ? "Logging in..." : "Login"} 
+        onPress={handleLogin}
+        disabled={isLoading}
+      />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  formTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
+  input: {
+    width: '100%',
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+  }
+});
 
 export default LoginForm;

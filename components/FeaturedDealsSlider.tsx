@@ -1,72 +1,142 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../lib/supabase';
+import { router } from 'expo-router';
 
-// Sample data for featured deals
-const featuredDeals = [
-  {
-    id: '1',
-    title: 'Wireless Earbuds',
-    price: '₹1,999',
-    image: require('../assets/images/earbuds.png') // Replace with your actual image paths
-  },
-  {
-    id: '2',
-    title: 'Study Desk Lamp',
-    price: '₹899',
-    image: require('../assets/images/placeholder-lamp.png')
-  },
-  {
-    id: '3',
-    title: 'Engineering Calculator',
-    price: '₹1,299',
-    image: require('../assets/images/placeholder-calculator.png')
-  },
-  {
-    id: '4',
-    title: 'Bluetooth Speaker',
-    price: '₹2,499',
-    image: require('../assets/images/placeholder-speaker.png')
-  },
-  {
-    id: '5',
-    title: 'Laptop Cooling Pad',
-    price: '₹1,199',
-    image: require('../assets/images/placeholder-coolingpad.png')
-  }
-];
+interface FeaturedItem {
+  id: string;
+  title: string;
+  price: number;
+  image_url: string;
+  category_name: string;
+}
 
 const FeaturedDealsSlider = () => {
-  const renderDealItem = ({ item }) => (
-    <TouchableOpacity style={styles.dealItem}>
+  const [featuredItems, setFeaturedItems] = useState<FeaturedItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchFeaturedItems();
+  }, []);
+
+  const fetchFeaturedItems = async () => {
+    try {
+      setLoading(true);
+      
+      // First get all categories
+      const { data: categories, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (categoriesError) throw categoriesError;
+      
+      if (!categories || categories.length === 0) {
+        setFeaturedItems([]);
+        return;
+      }
+
+      // For each category, get the latest active listing
+      const latestItemPromises = categories.map(async (category) => {
+        const { data: items, error: itemsError } = await supabase
+          .from('listings')
+          .select(`
+            id,
+            title,
+            price,
+            image_url,
+            category_id
+          `)
+          .eq('category_id', category.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (itemsError) {
+          console.error(`Error fetching items for category ${category.id}:`, itemsError);
+          return null;
+        }
+
+        if (items && items.length > 0) {
+          return {
+            ...items[0],
+            category_name: category.name
+          };
+        }
+
+        return null;
+      });
+
+      const results = await Promise.all(latestItemPromises);
+      const filteredResults = results.filter(item => item !== null) as FeaturedItem[];
+      
+      setFeaturedItems(filteredResults);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching featured items:', err);
+      setError('Failed to load featured items');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewItem = (itemId: string) => {
+    // Navigate to item details page - for now, just go to explore
+    router.push({
+      pathname: '/explore',
+      params: { itemId }
+    });
+  };
+
+  const renderDealItem = ({ item }: { item: FeaturedItem }) => (
+    <TouchableOpacity 
+      style={styles.dealItem}
+      onPress={() => handleViewItem(item.id)}
+    >
       <View style={styles.dealContent}>
-        <Text style={styles.dealTitle}>{item.title}</Text>
-        <Text style={styles.dealPrice}>{item.price}</Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={14} color="#FFD700" />
-          <Ionicons name="star" size={14} color="#FFD700" />
-          <Ionicons name="star" size={14} color="#FFD700" />
-          <Ionicons name="star" size={14} color="#FFD700" />
-          <Ionicons name="star-half" size={14} color="#FFD700" />
-          <Text style={styles.ratingText}>(4.5)</Text>
-        </View>
-        <TouchableOpacity style={styles.viewButton}>
+        <Text style={styles.dealCategory}>{item.category_name}</Text>
+        <Text style={styles.dealTitle} numberOfLines={2}>{item.title}</Text>
+        <Text style={styles.dealPrice}>₹{item.price.toLocaleString()}</Text>
+        <TouchableOpacity 
+          style={styles.viewButton}
+          onPress={() => handleViewItem(item.id)}
+        >
           <Text style={styles.viewButtonText}>View</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.imageContainer}>
         <Image 
-          source={item.image} 
+          source={{ uri: item.image_url }} 
           style={styles.dealImage} 
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="small" color="#b1f03d" />
+      </View>
+    );
+  }
+
+  if (error || featuredItems.length === 0) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          {error || "No featured items available"}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <FlatList
-      data={featuredDeals}
+      data={featuredItems}
       renderItem={renderDealItem}
       keyExtractor={item => item.id}
       horizontal
@@ -99,28 +169,24 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     justifyContent: 'space-between',
   },
+  dealCategory: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#555',
+    marginBottom: 2,
+  },
   dealTitle: {
     fontSize: 16,
-    fontFamily: 'LexendBold',
+    fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
+    flex: 1,
   },
   dealPrice: {
     fontSize: 18,
-    fontFamily: 'LexendBold',
+    fontWeight: 'bold',
     color: '#333',
-    marginBottom: 4,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 8,
-  },
-  ratingText: {
-    fontSize: 12,
-    color: '#555',
-    marginLeft: 4,
-    fontFamily: 'LexendRegular',
   },
   viewButton: {
     backgroundColor: '#333',
@@ -132,7 +198,7 @@ const styles = StyleSheet.create({
   viewButtonText: {
     color: 'white',
     fontSize: 12,
-    fontFamily: 'LexendBold',
+    fontWeight: 'bold',
   },
   imageContainer: {
     width: 120,
@@ -141,8 +207,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dealImage: {
-    width: 100,
-    height: 100,
+    width: 110,
+    height: 110,
+    borderRadius: 8,
+  },
+  loadingContainer: {
+    height: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    height: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#777',
+    textAlign: 'center',
   },
 });
 

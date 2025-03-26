@@ -1,21 +1,28 @@
-import React, { useState, useRef } from 'react';
-import { ScrollView, Animated, Text, StyleSheet, View } from 'react-native';
+import React, { useState, useRef, useContext } from 'react';
+import { 
+  ScrollView, 
+  Animated, 
+  Text, 
+  StyleSheet, 
+  View, 
+  Alert, 
+  KeyboardAvoidingView, 
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  SafeAreaView
+} from 'react-native';
 import { globalStyles } from '../../../theme/styles';
 import Logo from '../../../components/Logo';
 import InputField from '../../../components/InputField';
 import Button from '../../../components/Button';
 import BackButton from '../../../components/BackButton';
 import PickerComponent from '../../../components/PickerComponent';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../../types/types';
 import { supabase } from '../../../lib/supabase';
-import { router } from 'expo-router';
-type HeaderNavigationProp = StackNavigationProp<RootStackParamList, 'SignupScreen'>;
+import { AuthContext } from '../../_layout';
 
 const SignupScreen = () => {
-  const navigation = useNavigation<HeaderNavigationProp>();
-
+  const { setIsAuthenticated } = useContext(AuthContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -23,7 +30,7 @@ const SignupScreen = () => {
     catRegNo: '',
     phoneNo: '',
     department: '',
-    username: '',
+    email: '',
     password: '',
     confirmPassword: '',
   });
@@ -74,65 +81,71 @@ const SignupScreen = () => {
 
   const handleSignup = async () => {
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
-    if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
-      alert('All fields are required!');
+    if (!formData.email || !formData.password || !formData.department || !formData.catRegNo) {
+      Alert.alert('Error', 'All fields are required!');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      console.log('Submitting user data to Supabase...');
+      console.log('[Signup Debug] Submitting user data to Supabase Auth...');
 
-
-      const userData = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        cat_reg_no: formData.catRegNo,
-        phone_no: formData.phoneNo,
-        department: formData.department,
-        username: formData.username,
-        password: formData.password, // Note: In production, you should hash passwords
-      };
-
-      console.log('User data being sent:', userData);
-
-      // Check for internet connection using a simpler approach
-      try {
-        await fetch('https://rqcuuptdadfsojgtepna.supabase.co');
-      } catch (networkError) {
-        alert('Network connection issue. Please check your internet connection and try again.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Using the Supabase client to insert data
-      const { data, error } = await supabase
-        .from('users')
-        .insert([userData]);
+      // Use Supabase Auth signUp instead of direct table insert
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            cat_reg_no: formData.catRegNo,
+            phone_no: formData.phoneNo,
+            department: formData.department
+          }
+        }
+      });
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('[Signup Debug] Supabase error:', error);
         throw error;
       }
 
-      console.log('Signup successful!');
-      alert('Signup successful!');
-      router.push('/screens/auth/router/login')
+      if (!data.user) {
+        throw new Error('No user data returned');
+      }
+
+      console.log('[Signup Debug] User created successfully:', data.user);
+
+      // Check if email confirmation is required
+      const requiresEmailConfirmation = !data.session;
+      
+      if (requiresEmailConfirmation) {
+        Alert.alert(
+          'Verification Required',
+          'Please check your email to verify your account before logging in.'
+        );
+        // Navigate back to login screen or stay on current screen
+      } else {
+        // Auto-login if email confirmation is disabled
+        setIsAuthenticated(true);
+        console.log('[Signup Debug] Authentication state updated, redirecting...');
+      }
+      
     } catch (error) {
-      console.error('Signup error details:', error);
+      console.error('[Signup Debug] Signup error details:', error);
       if (error instanceof Error) {
         if (error.message.includes('Network request failed')) {
-          alert('Network connection issue. Please check your internet connection and try again.');
+          Alert.alert('Network Error', 'Please check your internet connection and try again.');
         } else {
-          alert(`Signup failed: ${error.message}`);
+          Alert.alert('Signup Failed', error.message);
         }
       } else {
-        alert('An unknown error occurred during signup.');
+        Alert.alert('Error', 'An unknown error occurred during signup.');
       }
     } finally {
       setIsSubmitting(false);
@@ -140,63 +153,102 @@ const SignupScreen = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={globalStyles.container}>
-      <Logo />
-      <Text style={globalStyles.title}>Welcome to C-MEX!</Text>
-      <Text style={globalStyles.subtitle}>Buy, Sell, Rent—All in One Place</Text>
-      <Animated.View style={[globalStyles.stepContainer, { opacity: fadeAnim }]}>
-        {currentStep === 1 && (
-          <>
-            <InputField placeholder="First Name" value={formData.firstName} onChangeText={(text) => handleChange('firstName', text)} />
-            <InputField placeholder="Last Name" value={formData.lastName} onChangeText={(text) => handleChange('lastName', text)} />
-            <Button title="Continue" onPress={nextStep} />
-          </>
-        )}
-        {currentStep === 2 && (
-          <>
-            <InputField placeholder="CAT Registration No." value={formData.catRegNo} keyboardType="phone-pad" onChangeText={(text) => handleChange('catRegNo', text)} />
-            <InputField placeholder="Phone Number" value={formData.phoneNo} keyboardType="phone-pad" onChangeText={(text) => handleChange('phoneNo', text)} />
-            <PickerComponent
-              selectedValue={formData.department}
-              onValueChange={(value) => handleChange('department', value)}
-              items={[
-                { label: 'Select Department', value: '' },
-                { label: 'IT', value: 'IT' },
-                { label: 'SE', value: 'SE' },
-                { label: 'CS', value: 'CS' },
-                { label: 'EEE', value: 'EEE' },
-                { label: 'CE', value: 'CE' },
-                { label: 'EC', value: 'EC' },
-                { label: 'ME', value: 'ME' },
-              ]}
-            />
-            <View style={styles.buttonContainer}>
-              <BackButton onPress={prevStep} />
-              <Button title="Continue" onPress={nextStep} />
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollViewContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.logoWrapper}>
+              <Logo />
             </View>
-          </>
-        )}
-        {currentStep === 3 && (
-          <>
-            <InputField placeholder="Username" value={formData.username} onChangeText={(text) => handleChange('username', text)} />
-            <InputField placeholder="Set Password" value={formData.password} secureTextEntry onChangeText={(text) => handleChange('password', text)} />
-            <InputField placeholder="Confirm Password" value={formData.confirmPassword} secureTextEntry onChangeText={(text) => handleChange('confirmPassword', text)} />
-            <View style={styles.buttonContainer}>
-              <BackButton onPress={prevStep} />
-              <Button
-                title={isSubmitting ? "Processing..." : "Sign Up"}
-                onPress={handleSignup}
-                disabled={isSubmitting}
-              />
-            </View>
-          </>
-        )}
-      </Animated.View>
-    </ScrollView>
+            <Text style={globalStyles.title}>Welcome to C-MEX!</Text>
+            <Text style={globalStyles.subtitle}>Buy, Sell, Rent—All in One Place</Text>
+            <Animated.View style={[globalStyles.stepContainer, { opacity: fadeAnim }]}>
+              {currentStep === 1 && (
+                <>
+                  <InputField placeholder="First Name" value={formData.firstName} onChangeText={(text) => handleChange('firstName', text)} />
+                  <InputField placeholder="Last Name" value={formData.lastName} onChangeText={(text) => handleChange('lastName', text)} />
+                  <Button title="Continue" onPress={nextStep} />
+                </>
+              )}
+              {currentStep === 2 && (
+                <>
+                  <InputField placeholder="CAT Registration No." value={formData.catRegNo} keyboardType="phone-pad" onChangeText={(text) => handleChange('catRegNo', text)} />
+                  <InputField placeholder="Phone Number" value={formData.phoneNo} keyboardType="phone-pad" onChangeText={(text) => handleChange('phoneNo', text)} />
+                  <PickerComponent
+                    selectedValue={formData.department}
+                    onValueChange={(value) => handleChange('department', value)}
+                    items={[
+                      { label: 'Select Department', value: '' },
+                      { label: 'IT', value: 'IT' },
+                      { label: 'SE', value: 'SE' },
+                      { label: 'CS', value: 'CS' },
+                      { label: 'EEE', value: 'EEE' },
+                      { label: 'CE', value: 'CE' },
+                      { label: 'EC', value: 'EC' },
+                      { label: 'ME', value: 'ME' },
+                    ]}
+                  />
+                  <View style={styles.buttonContainer}>
+                    <BackButton onPress={prevStep} />
+                    <Button title="Continue" onPress={nextStep} />
+                  </View>
+                </>
+              )}
+              {currentStep === 3 && (
+                <>
+                  <InputField 
+                    placeholder="Email" 
+                    value={formData.email} 
+                    onChangeText={(text) => handleChange('email', text)} 
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <InputField placeholder="Set Password" value={formData.password} secureTextEntry onChangeText={(text) => handleChange('password', text)} />
+                  <InputField placeholder="Confirm Password" value={formData.confirmPassword} secureTextEntry onChangeText={(text) => handleChange('confirmPassword', text)} />
+                  <View style={styles.buttonContainer}>
+                    <BackButton onPress={prevStep} />
+                    <Button
+                      title={isSubmitting ? "Processing..." : "Sign Up"}
+                      onPress={handleSignup}
+                      disabled={isSubmitting}
+                    />
+                  </View>
+                </>
+              )}
+            </Animated.View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    padding: 20,
+    paddingBottom: 50,
+    alignItems: 'center',
+  },
+  logoWrapper: {
+    alignItems: 'center',
+    marginBottom: 5,
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',

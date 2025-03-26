@@ -10,22 +10,26 @@ import {
   StyleSheet
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../../../supabaseConfig';
+import { supabase } from '@/lib/supabase';
 import PickerComponent from '@/components/PickerComponent';
 import { Colors } from '../../../assets/styles/colors'; // Keeping your original colors
 import Header from '@/components/Header';
-import { db } from '@/FirebaseConfig';
-import { getDocs, collection } from 'firebase/firestore';
+import { useRouter } from 'expo-router';
 
 interface Category {
   id: string;
-  Name: string;
+  name: string;
+  icon: string;
 }
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
 const SellPageScreen = () => {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice] = useState(''); // New state for price
+  const [price, setPrice] = useState('');
   const [durationValue, setDurationValue] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('hour');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -35,69 +39,195 @@ const SellPageScreen = () => {
   const [loading, setLoading] = useState(false);
   const [listingType, setListingType] = useState('sell');
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
   useEffect(() => {
-    getCategoryList();
+    getCategoryList(0);
   }, []);
 
-  const getCategoryList = async () => {
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const getCategoryList = async (retryCount: number = 0) => {
+    setIsLoadingCategories(true);
     try {
-      const querySnapshot = await getDocs(collection(db, "Category "));
-      const categories: { label: string; value: string }[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data() as Category;
-        categories.push({ label: data.Name, value: doc.id });
-      });
-      setCategoryList(categories);
-      if (categories.length > 0) {
-        setSelectedCategory(categories[0].value);
+      // Check if Supabase client is initialized
+      if (!supabase) {
+        throw new Error('Supabase client is not initialized');
       }
-    } catch (error) {
+
+      const { data: categories, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+
+      if (!categories || categories.length === 0) {
+        throw new Error('No categories found');
+      }
+
+      const formattedCategories = categories.map(category => ({
+        label: category.name,
+        value: category.id
+      }));
+
+      setCategoryList(formattedCategories);
+      if (formattedCategories.length > 0) {
+        setSelectedCategory(formattedCategories[0].value);
+        setSelectedCategoryName(formattedCategories[0].label);
+      }
+      setUploadError(null);
+    } catch (error: any) {
       console.error("Error fetching categories:", error);
+      
+      // Retry logic
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying category fetch... Attempt ${retryCount + 1}`);
+        await delay(RETRY_DELAY);
+        return getCategoryList(retryCount + 1);
+      }
+
+      // If all retries failed, set a user-friendly error
+      setUploadError(
+        "Unable to load categories. Please check your internet connection and try again."
+      );
+      
+      // Set default categories if available
+      const defaultCategories = [
+        { label: 'Fashion', value: '51f0986a-29b3-49d3-942d-afe2345c2d30' },
+        { label: 'Electronics', value: '8a61e341-2c18-4c40-961c-0d1f44fd4a4c' },
+        { label: 'Sports', value: '8f421dfc-8ad8-4b11-8615-cdd05b4f4943' }
+      ];
+      setCategoryList(defaultCategories);
+      setSelectedCategory(defaultCategories[0].value);
+      setSelectedCategoryName(defaultCategories[0].label);
+    } finally {
+      setIsLoadingCategories(false);
     }
   };
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled && result.assets.length > 0) {
-      setImage(result.assets[0].uri);
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.5,
+        base64: true,
+      });
+      
+      if (!result.canceled && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      setUploadError('Failed to pick image. Please try again.');
     }
   };
 
   const uploadImageToSupabase = async (uri: string): Promise<string | null> => {
     try {
+      // Convert URI to Base64
       const response = await fetch(uri);
       const blob = await response.blob();
-      const fileName = `${Date.now()}-listing-image`;
-      const filePath = `listings/${fileName}`;
+      
+      // Convert Blob to Base64
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const base64Data = reader.result as string;
+            const base64Content = base64Data.split(',')[1];
+            
+            // Generate unique filename
+            const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
+            const fileName = `${Date.now()}.${fileExt}`;
+            
+            // Upload to Supabase
+            const { data, error: uploadError } = await supabase.storage
+              .from('listings')
+              .upload(fileName, decode(base64Content), {
+                contentType: `image/${fileExt}`,
+                cacheControl: '3600',
+                upsert: false
+              });
 
-      const { data, error } = await supabase.storage
-        .from('listings')
-        .upload(filePath, blob);
+            if (uploadError) throw uploadError;
 
-      if (error) {
-        throw error;
-      }
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('listings')
+              .getPublicUrl(fileName);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('listings')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
+            resolve(publicUrl);
+          } catch (error) {
+            console.error('Error in base64 upload:', error);
+            reject(error);
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(blob);
+      });
     } catch (error) {
       console.error('Error uploading image:', error);
+      if (error instanceof Error) {
+        setUploadError(`Failed to upload image: ${error.message}`);
+      } else {
+        setUploadError('Failed to upload image. Please try again.');
+      }
       return null;
     }
   };
 
+  // Add decode function for base64
+  function decode(base64: string) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let bufferLength = base64.length * 0.75,
+    len = base64.length,
+    i,
+    p = 0,
+    encoded1,
+    encoded2,
+    encoded3,
+    encoded4;
+
+    if (base64[base64.length - 1] === '=') {
+      bufferLength--;
+      if (base64[base64.length - 2] === '=') {
+        bufferLength--;
+      }
+    }
+
+    const arraybuffer = new ArrayBuffer(bufferLength),
+    bytes = new Uint8Array(arraybuffer);
+
+    for (i = 0; i < len; i += 4) {
+      encoded1 = chars.indexOf(base64[i]);
+      encoded2 = chars.indexOf(base64[i + 1]);
+      encoded3 = chars.indexOf(base64[i + 2]);
+      encoded4 = chars.indexOf(base64[i + 3]);
+
+      bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+      bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+      bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+    }
+
+    return arraybuffer;
+  }
+
   const onSubmit = async () => {
-    if (!image || !title || !description || !price || !selectedCategory) {
+    if (!image || !title || !description || !selectedCategory) {
       setUploadError('Please fill in all required fields and add an image');
+      return;
+    }
+
+    if (listingType === 'sell' && !price) {
+      setUploadError('Please enter a price for your item');
+      return;
+    }
+
+    if (listingType === 'rent' && !durationValue) {
+      setUploadError('Please enter a rental price');
       return;
     }
 
@@ -106,7 +236,8 @@ const SellPageScreen = () => {
 
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -124,15 +255,15 @@ const SellPageScreen = () => {
           {
             title,
             description,
-            price: parseFloat(price),
+            price: parseFloat(price || durationValue),
             category_id: selectedCategory,
             category_name: selectedCategoryName,
-            duration_value: durationValue ? parseFloat(durationValue) : null,
-            duration_unit: selectedDuration,
+            duration_value: listingType === 'rent' ? parseFloat(durationValue) : null,
+            duration_unit: listingType === 'rent' ? selectedDuration : null,
             image_url: imageUrl,
             listing_type: listingType,
             user_id: user.id,
-            created_at: new Date().toISOString(),
+            status: 'active'
           }
         ])
         .select();
@@ -149,8 +280,8 @@ const SellPageScreen = () => {
       setImage(null);
       setUploadError(null);
       
-      // You can add navigation here if needed
-      // navigation.navigate('Home');
+      // Navigate to home screen after successful submission
+      router.push('/');
       
     } catch (error: any) {
       console.error('Error creating listing:', error);
@@ -176,17 +307,28 @@ const SellPageScreen = () => {
 
         <View style={styles.formContainer}>
           {uploadError && (
-            <Text style={styles.errorText}>{uploadError}</Text>
+            <TouchableOpacity 
+              onPress={() => getCategoryList(0)}
+              style={styles.errorContainer}
+            >
+              <Text style={styles.errorText}>{uploadError}</Text>
+              <Text style={styles.retryText}>Tap to retry</Text>
+            </TouchableOpacity>
           )}
-          <PickerComponent
-            selectedValue={selectedCategory}
-            onValueChange={(value) => {
-              setSelectedCategory(value);
-              const selectedCategoryData = categoryList.find(category => category.value === value);
-              setSelectedCategoryName(selectedCategoryData ? selectedCategoryData.label : '');
-            }}
-            items={categoryList}
-          />
+
+          {isLoadingCategories ? (
+            <ActivityIndicator size="small" color={Colors.primary} />
+          ) : (
+            <PickerComponent
+              selectedValue={selectedCategory}
+              onValueChange={(value) => {
+                setSelectedCategory(value);
+                const selectedCategoryData = categoryList.find(category => category.value === value);
+                setSelectedCategoryName(selectedCategoryData ? selectedCategoryData.label : '');
+              }}
+              items={categoryList}
+            />
+          )}
 
           <PickerComponent
             selectedValue={listingType}
@@ -354,9 +496,20 @@ const styles = StyleSheet.create({
   topSpacing: {
     height: 10,
   },
+  errorContainer: {
+    backgroundColor: '#FFE5E5',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
   errorText: {
     color: 'red',
-    marginBottom: 10,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  retryText: {
+    color: '#666',
+    fontSize: 12,
     textAlign: 'center',
   },
 });

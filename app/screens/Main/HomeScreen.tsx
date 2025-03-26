@@ -1,53 +1,107 @@
-import React from 'react';
-import { ScrollView, View, Text, StyleSheet, FlatList, SafeAreaView, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, View, Text, StyleSheet, FlatList, SafeAreaView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFonts, Lexend_400Regular, Lexend_600SemiBold } from '@expo-google-fonts/lexend';
 import * as SplashScreen from 'expo-splash-screen';
+import { router } from 'expo-router';
 import Header from '../../../components/Header';
 import SaleBanner from '../../../components/SaleBanner';
 import ItemCarousel from '../../../components/ItemCarousel';
 import FeaturedDealsSlider from '../../../components/FeaturedDealsSlider'
 import { Ionicons } from '@expo/vector-icons';
-
-SplashScreen.preventAutoHideAsync();
+import { supabase } from '../../../lib/supabase';
 
 export default function HomeScreen() {
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; icon: string }>>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
   let [fontsLoaded] = useFonts({
     LexendRegular: Lexend_400Regular,
     LexendBold: Lexend_600SemiBold,
   });
 
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
   if (!fontsLoaded) {
     return null;
-  } else {
-    SplashScreen.hideAsync();
   }
 
-  const categories = [
-    { id: '1', name: 'Fashion', icon: 'shirt-outline' },
-    { id: '2', name: 'Stationery', icon: 'create-outline' },
-    { id: '3', name: 'Vehicles', icon: 'car-outline' },
-    { id: '4', name: 'Kitchen', icon: 'fast-food-outline' },
-    { id: '5', name: 'Electronics', icon: 'tv-outline' },
-    { id: '6', name: 'Sports', icon: 'football-outline' },
-  ];
+  // Navigation handlers
+  const handleSellPress = () => {
+    router.push('/sell');
+  };
+
+  const handleBuyPress = () => {
+    // Navigate to Explore screen with 'sell' filter
+    router.push({
+      pathname: '/explore',
+      params: { listingType: 'sell' }
+    });
+  };
+
+  const handleRentPress = () => {
+    // Navigate to Explore screen with 'rent' filter
+    router.push({
+      pathname: '/explore',
+      params: { listingType: 'rent' }
+    });
+  };
+
+  const handleCategoryPress = (categoryId: string, categoryName: string) => {
+    // Navigate to Explore screen with category filter
+    router.push({
+      pathname: '/explore',
+      params: { categoryId, categoryName }
+    });
+  };
+
+  const handleContinueSellingPress = () => {
+    // Navigate to My Listings page
+    router.push('/user/my-listings');
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      // Navigate to Explore screen with search query
+      router.push({
+        pathname: '/explore',
+        params: { searchQuery: searchQuery.trim() }
+      });
+    }
+  };
 
   const actions = [
-    { id: '1', name: 'Sell', icon: 'pricetag-outline' },
-    { id: '2', name: 'Buy', icon: 'cart-outline' },
-    { id: '3', name: 'Rent', icon: 'home-outline' },
+    { id: '1', name: 'Sell', icon: 'pricetag-outline', onPress: handleSellPress },
+    { id: '2', name: 'Buy', icon: 'cart-outline', onPress: handleBuyPress },
+    { id: '3', name: 'Rent', icon: 'home-outline', onPress: handleRentPress },
   ];
 
   const renderCategoryItem = ({ item }: { item: { id: string; name: string; icon: string } }) => (
-    <View style={styles.categoryItem}>
-      <Ionicons name={item.icon as any} size={32} color="#333" />
+    <TouchableOpacity 
+      style={styles.categoryItem}
+      onPress={() => handleCategoryPress(item.id, item.name)}
+    >
+      <Ionicons name={(item.icon as any) || 'grid-outline'} size={32} color="#333" />
       <Text style={styles.categoryText}>{item.name}</Text>
-    </View>
-  );
-
-  const renderActionButton = ({ item }: { item: { id: string; name: string; icon: string } }) => (
-    <TouchableOpacity style={styles.actionButton}>
-      <Ionicons name={item.icon as any} size={28} color="#000" />
-      <Text style={styles.actionText}>{item.name}</Text>
     </TouchableOpacity>
   );
 
@@ -61,12 +115,25 @@ export default function HomeScreen() {
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Ionicons name="search-outline" size={20} color="#666" style={styles.searchIcon} />
-          <TextInput style={styles.searchInput} placeholder="Search for products..." placeholderTextColor="#999" />
+          <TextInput 
+            style={styles.searchInput} 
+            placeholder="Search for products..." 
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionContainer}>
-          {actions.map((item) => renderActionButton({ item }))}
+          {actions.map((item) => (
+            <TouchableOpacity key={item.id} style={styles.actionButton} onPress={item.onPress}>
+              <Ionicons name={item.icon as any} size={28} color="#000" />
+              <Text style={styles.actionText}>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Featured Deals - Now with horizontal scrolling */}
@@ -77,17 +144,26 @@ export default function HomeScreen() {
 
         {/* Shop by Category */}
         <Text style={styles.sectionTitle}>Shop by Category</Text>
-        <FlatList
-          data={categories}
-          renderItem={renderCategoryItem}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryList}
-        />
+        {loadingCategories ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#b1f03d" />
+          </View>
+        ) : (
+          <FlatList
+            data={categories}
+            renderItem={renderCategoryItem}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryList}
+          />
+        )}
 
         {/* Continue Selling (Now with iOS Arrow Icon) */}
-        <TouchableOpacity style={styles.continueSellingCard}>
+        <TouchableOpacity 
+          style={styles.continueSellingCard}
+          onPress={handleContinueSellingPress}
+        >
           <Text style={styles.continueSellingTitle}>Continue Selling</Text>
           <View style={styles.continueSellingRow}>
             <Text style={styles.continueSellingText}>Your recently added products will appear here.</Text>
@@ -95,9 +171,7 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Featured Items */}
-        <Text style={styles.sectionTitle}>Featured Items</Text>
-        <ItemCarousel />
+        
       </ScrollView>
     </SafeAreaView>
   );
@@ -216,5 +290,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'LexendRegular',
     color: '#666',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 80,
   },
 });

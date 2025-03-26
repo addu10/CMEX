@@ -4,36 +4,39 @@ import Header from '@/components/Header';
 import { globalStyles } from '../../../theme/styles'; // Adjust the path as necessary
 import { Colors } from '../../../theme/colors';
 import { ScrollView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const SavedScreen: React.FC = () => {
     const savedItems: any[] = []; // Replace with actual wishlist items logic
 
     return (
-        <View style={styles.container}>
-            <Header />
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {savedItems.length === 0 ? (
-                    <View style={styles.emptyStateContainer}>
-                        <Image 
-                            source={{ uri: 'https://example.com/empty-wishlist.png' }} 
-                            style={styles.emptyImage} 
-                            accessibilityLabel="Empty wishlist illustration"
-                        />
-                        <Text style={styles.message} accessibilityRole="text">
-                            Your wishlist is currently empty.
-                        </Text>
-                        <TouchableOpacity style={styles.button} onPress={() => console.log('Navigate to Browse')}
-                            accessibilityRole="button"
-                            accessibilityLabel="Browse products button">
-                            <Text style={[styles.buttonText, { color: '#000', textAlign: 'center' }]}>Browse Products</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    // Render wishlist items here
-                    <Text style={styles.message} accessibilityRole="text">Your saved items will appear here.</Text>
-                )}
-            </ScrollView>
-        </View>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <Header />
+                <ScrollView contentContainerStyle={styles.scrollContainer}>
+                    {savedItems.length === 0 ? (
+                        <View style={styles.emptyStateContainer}>
+                            <Image 
+                                source={{ uri: 'https://example.com/empty-wishlist.png' }} 
+                                style={styles.emptyImage} 
+                                accessibilityLabel="Empty wishlist illustration"
+                            />
+                            <Text style={styles.message} accessibilityRole="text">
+                                Your wishlist is currently empty.
+                            </Text>
+                            <TouchableOpacity style={styles.button} onPress={() => console.log('Navigate to Browse')}
+                                accessibilityRole="button"
+                                accessibilityLabel="Browse products button">
+                                <Text style={[styles.buttonText, { color: '#000', textAlign: 'center' }]}>Browse Products</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        // Render wishlist items here
+                        <Text style={styles.message} accessibilityRole="text">Your saved items will appear here.</Text>
+                    )}
+                </ScrollView>
+            </View>
+        </GestureHandlerRootView>
     );
 };
 

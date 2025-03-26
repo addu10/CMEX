@@ -1,21 +1,17 @@
-
-
 // screens/Auth/SignupScreen.tsx
-import React, { useState, useRef } from 'react';
-import { ScrollView, Animated, Text } from 'react-native';
+import React, { useState, useRef, useContext } from 'react';
+import { ScrollView, Animated, Text, Alert } from 'react-native';
 import { globalStyles } from '../../../theme/styles';
 import Logo from '../../../components/Logo';
 import InputField from '../../../components/InputField';
 import Button from '../../../components/Button';
 import PickerComponent from '../../../components/PickerComponent';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack'; // Import the StackNavigationProp
-import { RootStackParamList } from '../../../types/types'; // Import your types
-
-type HeaderNavigationProp = StackNavigationProp<RootStackParamList, 'SignupScreen'>;
+import { supabase } from '../../../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthContext } from '../../_layout';
 
 const SignupScreen = () => {
-  const navigation = useNavigation<HeaderNavigationProp>();
+  const { setIsAuthenticated } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -33,6 +29,7 @@ const SignupScreen = () => {
   };
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const nextStep = (): Promise<boolean> => {
@@ -70,22 +67,74 @@ const SignupScreen = () => {
       useNativeDriver: true,
     }).start();
   };
-  const handleSignup = (): Promise<boolean> => {
-    if (formData.password !== formData.confirmPassword) {
-      return Promise.resolve(false);
-    }
-    console.log(formData);
 
-    if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
-      alert('Error, All fields are required!');
-      return Promise.resolve(false);
-    }
+  const handleSignup = async (): Promise<boolean> => {
+    try {
+      setIsLoading(true);
 
-    /* Navigate to CollegeVerificationScreen with the data
-    navigation.navigate('CollegeVerification', {
-      formData,
-    });*/
-    return Promise.resolve(true);
+      if (formData.password !== formData.confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match!');
+        return false;
+      }
+
+      if (!formData.username || !formData.password || !formData.department || !formData.catRegNo) {
+        Alert.alert('Error', 'All fields are required!');
+        return false;
+      }
+
+      console.log('[Signup Debug] Attempting to create user...');
+
+      // Insert the new user into the users table
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert([
+          {
+            username: formData.username,
+            password: formData.password, // In production, ensure this is properly hashed
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            cat_reg_no: formData.catRegNo,
+            phone_no: formData.phoneNo,
+            department: formData.department,
+          },
+        ])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('[Signup Debug] Error creating user:', insertError);
+        Alert.alert('Error', insertError.message);
+        return false;
+      }
+
+      console.log('[Signup Debug] User created successfully:', newUser);
+
+      // Create a session token
+      const sessionData = {
+        id: newUser.id,
+        username: newUser.username,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Store the session token
+      await AsyncStorage.setItem('userToken', JSON.stringify(sessionData));
+      console.log('[Signup Debug] Session stored successfully');
+
+      // Update auth context
+      setIsAuthenticated(true);
+      console.log('[Signup Debug] Authentication state updated, redirecting...');
+      
+      // The router.replace call is no longer needed here as the useProtectedRoute hook
+      // in the root layout will handle navigation based on auth state
+
+      return true;
+    } catch (error) {
+      console.error('[Signup Debug] Unexpected error:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -129,7 +178,11 @@ const SignupScreen = () => {
             <InputField placeholder="Set Password" value={formData.password} secureTextEntry onChangeText={(text) => handleChange('password', text)} />
             <InputField placeholder="Confirm Password" value={formData.confirmPassword} secureTextEntry onChangeText={(text) => handleChange('confirmPassword', text)} />
             <Button title="Back" onPress={prevStep} />
-            <Button title="Sign Up" onPress={handleSignup} />
+            <Button 
+              title={isLoading ? "Creating Account..." : "Sign Up"} 
+              onPress={handleSignup}
+              disabled={isLoading}
+            />
           </>
         )}
       </Animated.View>

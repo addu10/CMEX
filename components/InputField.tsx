@@ -9,6 +9,7 @@ interface InputFieldProps {
   secureTextEntry?: boolean;
   keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
   style?: object; // Add this line to accept custom styles
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
 }
 
 const InputField: React.FC<InputFieldProps> = ({ 
@@ -17,6 +18,7 @@ const InputField: React.FC<InputFieldProps> = ({
   onChangeText, 
   secureTextEntry, 
   keyboardType, 
+  autoCapitalize,
   style // Destructure the style prop
 }) => (
   <TextInput
@@ -26,6 +28,7 @@ const InputField: React.FC<InputFieldProps> = ({
     onChangeText={onChangeText}
     secureTextEntry={secureTextEntry}
     keyboardType={keyboardType}
+    autoCapitalize={autoCapitalize}
   />
 );
 

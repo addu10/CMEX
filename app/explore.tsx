@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import HomeScreen from './screens/Main/HomeScreen';
+import ExploreScreen from './screens/Main/ExploreScreen';
 
-export default function TabsLayout() {
+export default function Explore() {
   const router = useRouter();
   
   // Type-safe navigation paths
@@ -18,7 +18,7 @@ export default function TabsLayout() {
     <View style={styles.container}>
       {/* Main content */}
       <View style={styles.content}>
-        <HomeScreen />
+        <ExploreScreen />
       </View>
       
       {/* Tab Bar */}
@@ -29,7 +29,7 @@ export default function TabsLayout() {
           activeOpacity={0.7}
         >
           <View style={styles.tabItemContainer}>
-            <Ionicons name="home" size={24} color="#b1f03d" />
+            <Ionicons name="home" size={24} color="white" />
           </View>
         </TouchableOpacity>
         
@@ -39,7 +39,7 @@ export default function TabsLayout() {
           activeOpacity={0.7}
         >
           <View style={styles.tabItemContainer}>
-            <Ionicons name="search" size={24} color="white" />
+            <Ionicons name="search" size={24} color="#b1f03d" />
           </View>
         </TouchableOpacity>
         
@@ -117,5 +117,4 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
   }
-});
-
+}); 
