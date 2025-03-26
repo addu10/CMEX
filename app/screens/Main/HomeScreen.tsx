@@ -4,8 +4,6 @@ import { useFonts, Lexend_400Regular, Lexend_600SemiBold } from '@expo-google-fo
 import * as SplashScreen from 'expo-splash-screen';
 import { router } from 'expo-router';
 import Header from '../../../components/Header';
-import SaleBanner from '../../../components/SaleBanner';
-import ItemCarousel from '../../../components/ItemCarousel';
 import FeaturedDealsSlider from '../../../components/FeaturedDealsSlider'
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../lib/supabase';
