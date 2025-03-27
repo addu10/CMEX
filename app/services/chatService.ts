@@ -411,49 +411,144 @@ class ChatService {
   }
 
   /**
-   * Subscribe to new messages in a conversation
+   * Subscribe to conversation updates
    */
-  subscribeToMessages(conversationId: string, callback: (message: Message) => void) {
+  subscribeToConversations(callback: (conversation: Conversation) => void) {
     try {
-      // Basic validation
-      if (!conversationId) {
-        console.warn('Invalid conversation ID for subscription');
-        return { unsubscribe: () => {} };
-      }
-      
-      // First check if user is authenticated
+      // Subscribe to conversation updates
       const subscription = supabase
-        .channel(`messages:${conversationId}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
-        }, payload => {
-          try {
-            callback(payload.new as Message);
-          } catch (error) {
-            console.error('Error in message subscription callback:', error);
+        .channel('conversations_channel')
+        .on(
+          'postgres_changes' as never,  // Type assertion to fix the error
+          {
+            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: 'conversations'
+          },
+          async (payload: { new: { id: string } }) => {
+            try {
+              // Get the updated conversation with all related data
+              const updatedConversation = await this.getConversationById(payload.new.id);
+              if (updatedConversation) {
+                callback(updatedConversation);
+              }
+            } catch (error) {
+              console.error('Error processing conversation update:', error);
+            }
           }
-        })
+        )
         .subscribe((status) => {
-          if (status !== 'SUBSCRIBED') {
-            console.warn(`Subscription status: ${status}`);
+          if (status === 'SUBSCRIBED') {
+            console.log('Subscribed to conversations');
+          }
+          if (status === 'CHANNEL_ERROR') {
+            console.error('Error subscribing to conversations');
+            // Attempt to resubscribe after a delay
+            setTimeout(() => {
+              subscription.unsubscribe();
+              this.subscribeToConversations(callback);
+            }, 5000);
           }
         });
-        
+
       return {
         unsubscribe: () => {
-          try {
-            subscription.unsubscribe();
-          } catch (error) {
-            console.error('Error unsubscribing from channel:', error);
-          }
+          subscription.unsubscribe();
         }
       };
     } catch (error) {
-      console.error('Error subscribing to messages:', error);
-      // Return a dummy subscription that can be safely "unsubscribed"
+      console.error('Error setting up conversation subscription:', error);
+      return {
+        unsubscribe: () => {}
+      };
+    }
+  }
+
+  /**
+   * Subscribe to message updates
+   */
+  subscribeToMessages(conversationId: string, callback: (message: Message) => void) {
+    try {
+      // Subscribe to new messages in this conversation
+      const subscription = supabase
+        .channel(`chat:${conversationId}`)
+        .on(
+          'postgres_changes' as never,  // Type assertion to fix the error
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${conversationId}`
+          },
+          async (payload) => {
+            try {
+              const newMessage = payload.new as Message;
+              
+              // Fetch sender information
+              const { data: sender, error: senderError } = await supabase
+                .from('users')
+                .select('id, first_name, last_name, email')
+                .eq('id', newMessage.sender_id)
+                .single();
+                
+              if (senderError) {
+                console.warn('Error fetching sender details:', senderError);
+                callback(newMessage);
+                return;
+              }
+              
+              // Add sender information to message
+              if (sender) {
+                const avatar_url = supabase.storage
+                  .from('avatars')
+                  .getPublicUrl(`${sender.id}/avatar`)
+                  .data.publicUrl;
+                
+                const messageWithSender = {
+                  ...newMessage,
+                  sender: {
+                    ...sender,
+                    avatar_url
+                  }
+                } as Message;
+                
+                callback(messageWithSender);
+
+                // Update the conversation's last_message
+                await supabase
+                  .from('conversations')
+                  .update({ updated_at: new Date().toISOString() })
+                  .eq('id', conversationId);
+              } else {
+                callback(newMessage);
+              }
+            } catch (error) {
+              console.error('Error processing real-time message:', error);
+              callback(payload.new as Message);
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`Subscribed to chat:${conversationId}`);
+          }
+          if (status === 'CHANNEL_ERROR') {
+            console.error(`Error subscribing to chat:${conversationId}`);
+            // Attempt to resubscribe after a delay
+            setTimeout(() => {
+              subscription.unsubscribe();
+              this.subscribeToMessages(conversationId, callback);
+            }, 5000);
+          }
+        });
+
+      return {
+        unsubscribe: () => {
+          subscription.unsubscribe();
+        }
+      };
+    } catch (error) {
+      console.error('Error setting up chat subscription:', error);
       return {
         unsubscribe: () => {}
       };

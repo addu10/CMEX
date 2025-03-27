@@ -200,12 +200,28 @@ const ConversationsList = ({ onNewChat }: ConversationsListProps) => {
   const router = useRouter();
   const { isAuthenticated } = useContext(AuthContext);
 
-  // Check authentication before doing anything
+  // Get current user
   useEffect(() => {
+    const getCurrentUser = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error('Error getting current user:', error);
+          setError('Failed to authenticate user');
+          setLoading(false);
+          return;
+        }
+        setCurrentUser(data.user);
+      } catch (error) {
+        console.error('Error in getCurrentUser:', error);
+        setError('Failed to authenticate user');
+        setLoading(false);
+      }
+    };
+
     if (isAuthenticated) {
       getCurrentUser();
     } else {
-      // Reset state if not authenticated
       setCurrentUser(null);
       setConversations([]);
       setLoading(false);
@@ -213,70 +229,79 @@ const ConversationsList = ({ onNewChat }: ConversationsListProps) => {
     }
   }, [isAuthenticated]);
 
-  // Reload conversations whenever the screen comes into focus, but only if authenticated
-  useFocusEffect(
-    useCallback(() => {
-      if (currentUser && isAuthenticated) {
-        loadConversations();
-      }
-      return () => {
-        // Cleanup function if needed
-      };
-    }, [currentUser, isAuthenticated])
-  );
-
-  const getCurrentUser = async () => {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Error getting current user:', error);
-        setError('Failed to authenticate user');
-        setLoading(false); // Make sure to stop loading
-        return;
-      }
-      setCurrentUser(data.user);
-    } catch (error) {
-      console.error('Error in getCurrentUser:', error);
-      setError('Failed to authenticate user');
-      setLoading(false); // Make sure to stop loading
-    }
-  };
-
-  const loadConversations = async () => {
-    // Don't load conversations if not authenticated
+  // Load conversations and set up real-time subscription
+  useEffect(() => {
     if (!currentUser || !isAuthenticated) {
-      setLoading(false);
-      setRefreshing(false);
       return;
     }
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Verify authentication status before proceeding
-      const { data: sessionData, error: authError } = await supabase.auth.getSession();
-      if (authError || !sessionData.session) {
-        console.log('No active session, skipping conversation load');
+
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    const setupSubscription = () => {
+      subscription = chatService.subscribeToConversations((updatedConversation) => {
+        setConversations(prevConversations => {
+          // Find if this conversation already exists
+          const index = prevConversations.findIndex(c => c.id === updatedConversation.id);
+          
+          if (index !== -1) {
+            // Update existing conversation
+            const newConversations = [...prevConversations];
+            newConversations[index] = updatedConversation;
+            // Sort by updated_at
+            return newConversations.sort((a, b) => 
+              new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+            );
+          } else {
+            // Add new conversation
+            return [updatedConversation, ...prevConversations].sort((a, b) => 
+              new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+            );
+          }
+        });
+      });
+    };
+
+    const initialize = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Load initial conversations
+        const conversationsData = await chatService.getConversations();
+        setConversations(conversationsData);
+        
+        // Set up real-time subscription
+        setupSubscription();
+      } catch (err) {
+        console.error('Error initializing conversations:', err);
+        setError('Failed to load conversations. Please try again.');
+      } finally {
         setLoading(false);
-        setRefreshing(false);
-        return;
       }
-      
-      const conversations = await chatService.getConversations();
-      setConversations(conversations);
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-      setError('Failed to load conversations');
+    };
+
+    initialize();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [currentUser, isAuthenticated]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const conversationsData = await chatService.getConversations();
+      setConversations(conversationsData);
+      setError(null);
+    } catch (err) {
+      console.error('Error refreshing conversations:', err);
+      setError('Failed to refresh conversations. Please try again.');
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadConversations();
   };
 
   const handleSelectConversation = (conversation: Conversation) => {
@@ -341,7 +366,7 @@ const ConversationsList = ({ onNewChat }: ConversationsListProps) => {
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
             style={styles.retryButton}
-            onPress={loadConversations}
+            onPress={handleRefresh}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>

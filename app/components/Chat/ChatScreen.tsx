@@ -11,7 +11,8 @@ import {
   Platform,
   Image,
   Keyboard,
-  SafeAreaView
+  SafeAreaView,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -86,28 +87,61 @@ const ChatScreen = ({ conversationId }: ChatScreenProps) => {
     loadData();
 
     // Set up real-time subscription to new messages
-    const subscription = chatService.subscribeToMessages(conversationId, (newMsg) => {
-      setMessages(prevMessages => {
-        // Check if the message is already in the list
-        const exists = prevMessages.some(msg => msg.id === newMsg.id);
-        if (exists) return prevMessages;
-        
-        // Mark messages as read if they're from the other user
-        if (newMsg.sender_id !== currentUser) {
-          chatService.markMessagesAsRead(conversationId);
-        }
-        
-        return [...prevMessages, newMsg];
-      });
-      
-      // Scroll to bottom
-      setTimeout(() => {
-        listRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    });
+    let subscription: { unsubscribe: () => void } | null = null;
+    let retryCount = 0;
+    const maxRetries = 3;
 
+    const setupSubscription = () => {
+      subscription = chatService.subscribeToMessages(conversationId, (newMsg) => {
+        setMessages(prevMessages => {
+          // Check if the message is already in the list
+          const exists = prevMessages.some(msg => msg.id === newMsg.id);
+          if (exists) return prevMessages;
+          
+          // Remove any optimistic version of this message if it exists
+          const withoutOptimistic = prevMessages.filter(msg => 
+            !msg.id.startsWith('temp-') || 
+            msg.content !== newMsg.content
+          );
+          
+          // Mark messages as read if they're from the other user
+          if (newMsg.sender_id !== currentUser) {
+            chatService.markMessagesAsRead(conversationId);
+          }
+          
+          const updatedMessages = [...withoutOptimistic, newMsg];
+          
+          // Sort messages by created_at
+          return updatedMessages.sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+        });
+        
+        // Scroll to bottom
+        setTimeout(() => {
+          listRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      });
+    };
+
+    const handleConnectionError = () => {
+      if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(`Retrying subscription... Attempt ${retryCount}`);
+        setTimeout(() => {
+          subscription?.unsubscribe();
+          setupSubscription();
+        }, 2000 * retryCount); // Exponential backoff
+      }
+    };
+
+    setupSubscription();
+
+    // Cleanup subscription on unmount
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [conversationId, currentUser]);
 
@@ -145,6 +179,7 @@ const ChatScreen = ({ conversationId }: ChatScreenProps) => {
     };
   }, []);
 
+  // Handle sending messages
   const handleSend = async () => {
     if (!newMessage.trim()) return;
 
@@ -153,16 +188,24 @@ const ChatScreen = ({ conversationId }: ChatScreenProps) => {
       const trimmedMessage = newMessage.trim();
       setNewMessage('');
       
-      // Optimistically add message to list
+      // Create optimistic message
       const optimisticMsg: Message = {
         id: `temp-${Date.now()}`,
         conversation_id: conversationId,
         sender_id: currentUser || '',
         content: trimmedMessage,
         created_at: new Date().toISOString(),
-        read: false
+        read: false,
+        sender: currentUser ? {
+          id: currentUser,
+          first_name: 'You',
+          last_name: '',
+          email: '',
+          avatar_url: undefined
+        } : undefined
       };
       
+      // Add optimistic message
       setMessages(prev => [...prev, optimisticMsg]);
       
       // Scroll to bottom
@@ -176,6 +219,8 @@ const ChatScreen = ({ conversationId }: ChatScreenProps) => {
       console.error('Error sending message:', error);
       // Remove optimistic message on error
       setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
+      // Show error to user
+      Alert.alert('Error', 'Failed to send message. Please try again.');
     } finally {
       setSending(false);
       Keyboard.dismiss();

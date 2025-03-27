@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, ScrollView, Image, SafeAreaView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 
 interface Listing {
@@ -27,15 +27,12 @@ const ListingCard: React.FC<{
   onToggleSave: (listingId: string, isSaved: boolean) => void;
   onPress?: () => void;
 }> = ({ listing, onToggleSave, onPress }) => {
-  const [isSaved, setIsSaved] = useState(listing.is_saved || false);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
   const handleToggleSave = (e: any) => {
     e.stopPropagation(); // Prevent triggering card press
-    const newSavedState = !isSaved;
-    setIsSaved(newSavedState);
-    onToggleSave(listing.id, newSavedState);
+    onToggleSave(listing.id, !listing.is_saved);
   };
 
   const renderPlaceholder = () => {
@@ -84,9 +81,9 @@ const ListingCard: React.FC<{
         onPress={handleToggleSave}
       >
         <Ionicons
-          name={isSaved ? "heart" : "heart-outline"}
+          name={listing.is_saved ? "heart" : "heart-outline"}
           size={24}
-          color={isSaved ? "#f03d3d" : "white"}
+          color={listing.is_saved ? "#f03d3d" : "white"}
         />
       </TouchableOpacity>
       <Text style={styles.cardTitle} numberOfLines={1}>{listing.title}</Text>
@@ -279,6 +276,13 @@ export default function ExploreScreen() {
       return;
     }
 
+    // Immediately update UI state
+    setListings(listings.map(listing =>
+      listing.id === listingId
+        ? { ...listing, is_saved: shouldSave }
+        : listing
+    ));
+
     try {
       if (shouldSave) {
         // Add to saved items
@@ -304,7 +308,7 @@ export default function ExploreScreen() {
       console.error('Error toggling saved item:', err);
       Alert.alert('Error', 'Failed to update saved items. Please try again.');
 
-      // Reset UI state if the operation failed
+      // Revert UI state if the operation failed
       setListings(listings.map(listing =>
         listing.id === listingId
           ? { ...listing, is_saved: !shouldSave }
@@ -337,6 +341,25 @@ export default function ExploreScreen() {
   useEffect(() => {
     fetchListings();
   }, [selectedCategory, selectedType, debouncedSearchQuery, currentUser]);
+
+  // Add focus effect to refresh saved items
+  useFocusEffect(
+    React.useCallback(() => {
+      if (currentUser) {
+        // Only fetch saved items if user is logged in
+        const updateSavedItems = async () => {
+          const savedIds = await fetchSavedListings(currentUser.id);
+          setListings(currentListings => 
+            currentListings.map(listing => ({
+              ...listing,
+              is_saved: savedIds.includes(listing.id)
+            }))
+          );
+        };
+        updateSavedItems();
+      }
+    }, [currentUser])
+  );
 
   const renderCategoryButton = (category: { id: string; name: string; icon: string }) => (
     <TouchableOpacity
