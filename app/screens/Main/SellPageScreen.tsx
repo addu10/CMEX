@@ -7,7 +7,8 @@ import {
   Image,
   ActivityIndicator,
   Text,
-  StyleSheet
+  StyleSheet,
+  SafeAreaView
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
@@ -292,130 +293,136 @@ const SellPageScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Header />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.imageContainer}>
-          <TouchableOpacity onPress={pickImage} style={styles.imagePreview}>
-            {image ? (
-              <Image source={{ uri: image }} style={styles.image} />
-            ) : (
-              <Text style={styles.imagePlaceholder}>Tap to add image</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.formContainer}>
-          {uploadError && (
-            <TouchableOpacity 
-              onPress={() => getCategoryList(0)}
-              style={styles.errorContainer}
-            >
-              <Text style={styles.errorText}>{uploadError}</Text>
-              <Text style={styles.retryText}>Tap to retry</Text>
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
+        <Header />
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.imageContainer}>
+            <TouchableOpacity onPress={pickImage} style={styles.imagePreview}>
+              {image ? (
+                <Image source={{ uri: image }} style={styles.image} />
+              ) : (
+                <Text style={styles.imagePlaceholder}>Tap to add image</Text>
+              )}
             </TouchableOpacity>
-          )}
+          </View>
 
-          {isLoadingCategories ? (
-            <ActivityIndicator size="small" color={Colors.primary} />
-          ) : (
+          <View style={styles.formContainer}>
+            {uploadError && (
+              <TouchableOpacity 
+                onPress={() => getCategoryList(0)}
+                style={styles.errorContainer}
+              >
+                <Text style={styles.errorText}>{uploadError}</Text>
+                <Text style={styles.retryText}>Tap to retry</Text>
+              </TouchableOpacity>
+            )}
+
+            {isLoadingCategories ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <PickerComponent
+                selectedValue={selectedCategory}
+                onValueChange={(value) => {
+                  setSelectedCategory(value);
+                  const selectedCategoryData = categoryList.find(category => category.value === value);
+                  setSelectedCategoryName(selectedCategoryData ? selectedCategoryData.label : '');
+                }}
+                items={categoryList}
+              />
+            )}
+
             <PickerComponent
-              selectedValue={selectedCategory}
+              selectedValue={listingType}
               onValueChange={(value) => {
-                setSelectedCategory(value);
-                const selectedCategoryData = categoryList.find(category => category.value === value);
-                setSelectedCategoryName(selectedCategoryData ? selectedCategoryData.label : '');
+                setListingType(value);
+                if (value === 'sell') {
+                  setSelectedDuration('hour');
+                  setDurationValue('');
+                }
               }}
-              items={categoryList}
+              items={[
+                { label: 'Sell', value: 'sell' },
+                { label: 'Rent', value: 'rent' }
+              ]}
             />
-          )}
 
-          <PickerComponent
-            selectedValue={listingType}
-            onValueChange={(value) => {
-              setListingType(value);
-              if (value === 'sell') {
-                setSelectedDuration('hour');
-                setDurationValue('');
-              }
-            }}
-            items={[
-              { label: 'Sell', value: 'sell' },
-              { label: 'Rent', value: 'rent' }
-            ]}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Title"
-            value={title}
-            onChangeText={setTitle}
-            placeholderTextColor="#8A8A8A"
-          />
-
-          <TextInput
-            style={[styles.input, styles.descriptionInput]}
-            placeholder="Description"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            placeholderTextColor="#8A8A8A"
-          />
-
-          {/* Price input field (only when "Sell" is selected) */}
-          {listingType === 'sell' && (
             <TextInput
               style={styles.input}
-              placeholder="Price"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="numeric"
+              placeholder="Title"
+              value={title}
+              onChangeText={setTitle}
               placeholderTextColor="#8A8A8A"
             />
-          )}
 
-          {listingType === 'rent' && (
-            <>
-              <PickerComponent
-                selectedValue={selectedDuration}
-                onValueChange={setSelectedDuration}
-                items={[
-                  { label: 'Hour', value: 'hour' },
-                  { label: 'Day', value: 'day' },
-                  { label: 'Week', value: 'week' },
-                  { label: 'Month', value: 'month' },
-                ]}
-              />
+            <TextInput
+              style={[styles.input, styles.descriptionInput]}
+              placeholder="Description"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              placeholderTextColor="#8A8A8A"
+            />
 
+            {/* Price input field (only when "Sell" is selected) */}
+            {listingType === 'sell' && (
               <TextInput
                 style={styles.input}
-                placeholder={`Standard Price per ${selectedDuration}`}
-                value={durationValue}
-                onChangeText={setDurationValue}
+                placeholder="Price"
+                value={price}
+                onChangeText={setPrice}
                 keyboardType="numeric"
                 placeholderTextColor="#8A8A8A"
               />
-            </>
-          )}
+            )}
 
-          <TouchableOpacity style={styles.submitButton} onPress={onSubmit}>
-            <Text style={styles.submitButtonText}>Submit Listing</Text>
-          </TouchableOpacity>
+            {listingType === 'rent' && (
+              <>
+                <PickerComponent
+                  selectedValue={selectedDuration}
+                  onValueChange={setSelectedDuration}
+                  items={[
+                    { label: 'Hour', value: 'hour' },
+                    { label: 'Day', value: 'day' },
+                    { label: 'Week', value: 'week' },
+                    { label: 'Month', value: 'month' },
+                  ]}
+                />
 
-          <View style={styles.bottomSpacing} />
-        </View>
-      </ScrollView>
+                <TextInput
+                  style={styles.input}
+                  placeholder={`Standard Price per ${selectedDuration}`}
+                  value={durationValue}
+                  onChangeText={setDurationValue}
+                  keyboardType="numeric"
+                  placeholderTextColor="#8A8A8A"
+                />
+              </>
+            )}
 
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={Colors.white} />
-        </View>
-      )}
-    </View>
+            <TouchableOpacity style={styles.submitButton} onPress={onSubmit}>
+              <Text style={styles.submitButtonText}>Submit Listing</Text>
+            </TouchableOpacity>
+
+            <View style={styles.bottomSpacing} />
+          </View>
+        </ScrollView>
+
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={Colors.white} />
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F8F9FB',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Text, View, Image, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import { Text, View, Image, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppFonts } from '../../../assets/fonts/fonts';
 import * as ImagePicker from 'expo-image-picker';
@@ -260,73 +260,79 @@ const ProfileScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <Header />
-      <View style={styles.profileSection}>
-        <TouchableOpacity onPress={pickImage} style={styles.imageContainer} disabled={uploadingImage}>
-          {uploadingImage ? (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="small" color="#fff" />
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
+        <Header />
+        <View style={styles.profileSection}>
+          <TouchableOpacity onPress={pickImage} style={styles.imageContainer} disabled={uploadingImage}>
+            {uploadingImage ? (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="small" color="#fff" />
+              </View>
+            ) : (
+              <Image 
+                source={{ uri: profilePicture || 'https://source.unsplash.com/100x100/?portrait' }} 
+                style={styles.profilePicture} 
+              />
+            )}
+            <View style={styles.editIconContainer}>
+              <Ionicons name="camera" size={18} color="#fff" />
             </View>
-          ) : (
-            <Image 
-              source={{ uri: profilePicture || 'https://source.unsplash.com/100x100/?portrait' }} 
-              style={styles.profilePicture} 
-            />
-          )}
-          <View style={styles.editIconContainer}>
-            <Ionicons name="camera" size={18} color="#fff" />
-          </View>
-        </TouchableOpacity>
-        <Text style={styles.name}>{userData?.name}</Text>
-        <Text style={styles.email}>{userData?.email}</Text>
+          </TouchableOpacity>
+          <Text style={styles.name}>{userData?.name}</Text>
+          <Text style={styles.email}>{userData?.email}</Text>
+        </View>
+        <View style={styles.optionsContainer}>
+          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('edit-profile')}>
+            <Ionicons name="person-circle-outline" size={24} color="#000" />
+            <Text style={styles.optionText}>Edit Profile</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('my-listings')}>
+            <Ionicons name="list-outline" size={24} color="#000" />
+            <Text style={styles.optionText}>My Listings</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('change-password')}>
+            <Ionicons name="key-outline" size={24} color="#000" />
+            <Text style={styles.optionText}>Change Password</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('order-history')}>
+            <Ionicons name="time-outline" size={24} color="#000" />
+            <Text style={styles.optionText}>Order History</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('help-support')}>
+            <Ionicons name="help-circle-outline" size={24} color="#000" />
+            <Text style={styles.optionText}>Help & Support</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('terms-conditions')}>
+            <Ionicons name="document-text-outline" size={24} color="#000" />
+            <Text style={styles.optionText}>Terms & Conditions</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('delete-account')}>
+            <Ionicons name="trash-outline" size={24} color="#FF0000" />
+            <Text style={[styles.optionText, { color: '#FF0000' }]}>Delete Account</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.logoutContainer}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>LOGOUT</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.optionsContainer}>
-        <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('edit-profile')}>
-          <Ionicons name="person-circle-outline" size={24} color="#000" />
-          <Text style={styles.optionText}>Edit Profile</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('my-listings')}>
-          <Ionicons name="list-outline" size={24} color="#000" />
-          <Text style={styles.optionText}>My Listings</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('change-password')}>
-          <Ionicons name="key-outline" size={24} color="#000" />
-          <Text style={styles.optionText}>Change Password</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('order-history')}>
-          <Ionicons name="time-outline" size={24} color="#000" />
-          <Text style={styles.optionText}>Order History</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('help-support')}>
-          <Ionicons name="help-circle-outline" size={24} color="#000" />
-          <Text style={styles.optionText}>Help & Support</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('terms-conditions')}>
-          <Ionicons name="document-text-outline" size={24} color="#000" />
-          <Text style={styles.optionText}>Terms & Conditions</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('delete-account')}>
-          <Ionicons name="trash-outline" size={24} color="#FF0000" />
-          <Text style={[styles.optionText, { color: '#FF0000' }]}>Delete Account</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.logoutContainer}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>LOGOUT</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',

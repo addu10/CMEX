@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, ScrollView, Image, SafeAreaView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 
 interface Listing {
@@ -19,30 +19,120 @@ interface Listing {
       first_name: string;
     };
   };
+  is_saved?: boolean;
 }
 
-const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => (
-  <View style={styles.card}>
-    <Image source={{ uri: listing.image_url }} style={styles.cardImage} />
-    <Text style={styles.cardTitle}>{listing.title}</Text>
-    <Text style={styles.cardDescription} numberOfLines={2}>{listing.description}</Text>
-    <Text style={styles.cardCategory}>{listing.category_name}</Text>
-    <View style={styles.cardFooter}>
-      <Text style={styles.cardPrice}>
-        ₹{listing.price}
-        {listing.listing_type === 'rent' && listing.duration_unit && 
-          `/${listing.duration_unit}`
-        }
-      </Text>
-      <Text style={styles.cardSeller}>
-        by {listing.user_details?.raw_user_meta_data?.first_name || 'Unknown'}
-      </Text>
+const ListingCard: React.FC<{ 
+  listing: Listing;
+  onToggleSave: (listingId: string, isSaved: boolean) => void;
+  onPress?: () => void;
+}> = ({ listing, onToggleSave, onPress }) => {
+  const [isSaved, setIsSaved] = useState(listing.is_saved || false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
+  const handleToggleSave = (e: any) => {
+    e.stopPropagation(); // Prevent triggering card press
+    const newSavedState = !isSaved;
+    setIsSaved(newSavedState);
+    onToggleSave(listing.id, newSavedState);
+  };
+
+  const renderPlaceholder = () => {
+    if (imageLoading || imageError) {
+      return (
+        <View style={[styles.cardImage, styles.imagePlaceholder]}>
+          {imageError ? (
+            <Ionicons name="image-outline" size={40} color="#ccc" />
+          ) : (
+            <ActivityIndicator size="small" color="#b1f03d" />
+          )}
+        </View>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.imageContainer}>
+        {listing.image_url ? (
+          <Image 
+            source={{ uri: listing.image_url }} 
+            style={styles.cardImage}
+            onLoadStart={() => setImageLoading(true)}
+            onLoadEnd={() => setImageLoading(false)}
+            onError={() => {
+              setImageLoading(false);
+              setImageError(true);
+            }}
+            defaultSource={require('../../../assets/images/default-avatar.png')}
+          />
+        ) : (
+          <View style={[styles.cardImage, styles.imagePlaceholder]}>
+            <Ionicons name="image-outline" size={40} color="#ccc" />
+          </View>
+        )}
+        {renderPlaceholder()}
+      </View>
+      <TouchableOpacity 
+        style={styles.saveButton} 
+        onPress={handleToggleSave}
+      >
+        <Ionicons 
+          name={isSaved ? "heart" : "heart-outline"} 
+          size={24} 
+          color={isSaved ? "#f03d3d" : "white"} 
+        />
+      </TouchableOpacity>
+      <Text style={styles.cardTitle} numberOfLines={1}>{listing.title}</Text>
+      <Text style={styles.cardDescription} numberOfLines={2}>{listing.description}</Text>
+      <Text style={styles.cardCategory}>{listing.category_name}</Text>
+      <View style={styles.cardFooter}>
+        <Text style={styles.cardPrice}>
+          ₹{listing.price}
+          {listing.listing_type === 'rent' && listing.duration_unit && 
+            `/${listing.duration_unit}`
+          }
+        </Text>
+        <Text style={styles.cardSeller}>
+          by {listing.user_details?.raw_user_meta_data?.first_name || 'Unknown'}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+// Skeleton loader for listings while loading
+const ListingSkeletonLoader = () => (
+  <View style={styles.skeletonCard}>
+    <View style={styles.skeletonImage} />
+    <View style={styles.skeletonTitle} />
+    <View style={styles.skeletonDescription} />
+    <View style={styles.skeletonCategory} />
+    <View style={styles.skeletonFooter}>
+      <View style={styles.skeletonPrice} />
+      <View style={styles.skeletonSeller} />
     </View>
+  </View>
+);
+
+// Render loading state with skeletons
+const renderLoadingState = () => (
+  <View style={styles.skeletonContainer}>
+    {[1, 2, 3, 4, 5, 6].map(key => (
+      <ListingSkeletonLoader key={key} />
+    ))}
   </View>
 );
 
 export default function ExploreScreen() {
   const params = useLocalSearchParams();
+  const router = useRouter();
   const initialListingType = params.listingType as 'all' | 'sell' | 'rent' || 'all';
   const initialCategoryId = params.categoryId as string || null;
   const initialSearchQuery = params.searchQuery as string || '';
@@ -52,15 +142,56 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialSearchQuery);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategoryId);
   const [selectedType, setSelectedType] = useState<'all' | 'sell' | 'rent'>(initialListingType);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
 
   const listingTypes = [
     { id: 'all' as const, name: 'All' },
     { id: 'sell' as const, name: 'For Sale' },
     { id: 'rent' as const, name: 'For Rent' }
   ];
+
+  // Navigation to listing details
+  const navigateToListing = (listingId: string) => {
+    // For now, just navigate to explore screen with the listingId as a param
+    // In a real app, this would navigate to a details page
+    router.push('/explore');
+    
+    // Show details in an alert for demo purposes
+    Alert.alert(
+      'Listing Details',
+      `You selected listing ID: ${listingId}. In a complete app, this would navigate to a detailed view.`
+    );
+  };
+
+  // Debounce search query to prevent excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Get current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error fetching user:', error);
+        return;
+      }
+      
+      if (data?.user) {
+        setCurrentUser({ id: data.user.id });
+      }
+    };
+    
+    fetchCurrentUser();
+  }, []);
 
   const fetchCategories = async () => {
     try {
@@ -74,6 +205,22 @@ export default function ExploreScreen() {
     } catch (err) {
       console.error('Error fetching categories:', err);
       // Don't set error state as this is not a critical failure
+    }
+  };
+
+  const fetchSavedListings = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('saved_items')
+        .select('listing_id')
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      return data?.map(item => item.listing_id) || [];
+    } catch (err) {
+      console.error('Error fetching saved items:', err);
+      return [];
     }
   };
 
@@ -102,13 +249,19 @@ export default function ExploreScreen() {
       }
 
       // Apply search filter if there's a query
-      if (searchQuery) {
-        query = query.ilike('title', `%${searchQuery}%`);
+      if (debouncedSearchQuery) {
+        query = query.ilike('title', `%${debouncedSearchQuery}%`);
       }
 
       const { data: listingsData, error: listingsError } = await query;
 
       if (listingsError) throw listingsError;
+      
+      // Get saved listings if user is logged in
+      let savedListingIds: string[] = [];
+      if (currentUser) {
+        savedListingIds = await fetchSavedListings(currentUser.id);
+      }
       
       // Transform the data to match our Listing interface
       const transformedData = listingsData?.map(item => {
@@ -122,7 +275,8 @@ export default function ExploreScreen() {
             raw_user_meta_data: {
               first_name: item.users?.first_name || 'Unknown'
             }
-          }
+          },
+          is_saved: savedListingIds.includes(item.id)
         };
       }) as Listing[];
 
@@ -137,6 +291,56 @@ export default function ExploreScreen() {
     }
   };
 
+  const toggleSaveItem = async (listingId: string, shouldSave: boolean) => {
+    if (!currentUser) {
+      Alert.alert(
+        'Sign in required', 
+        'Please sign in to save items',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Sign In', 
+            onPress: () => router.push('/(auth)/login')
+          }
+        ]
+      );
+      return;
+    }
+    
+    try {
+      if (shouldSave) {
+        // Add to saved items
+        const { error } = await supabase
+          .from('saved_items')
+          .insert({
+            user_id: currentUser.id,
+            listing_id: listingId
+          });
+          
+        if (error) throw error;
+      } else {
+        // Remove from saved items
+        const { error } = await supabase
+          .from('saved_items')
+          .delete()
+          .eq('user_id', currentUser.id)
+          .eq('listing_id', listingId);
+          
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Error toggling saved item:', err);
+      Alert.alert('Error', 'Failed to update saved items. Please try again.');
+      
+      // Reset UI state if the operation failed
+      setListings(listings.map(listing => 
+        listing.id === listingId 
+          ? { ...listing, is_saved: !shouldSave } 
+          : listing
+      ));
+    }
+  };
+
   // Handle filter changes
   const handleCategoryChange = (categoryId: string | null) => {
     setSelectedCategory(categoryId);
@@ -144,11 +348,6 @@ export default function ExploreScreen() {
 
   const handleTypeChange = (type: 'all' | 'sell' | 'rent') => {
     setSelectedType(type);
-  };
-
-  // Handle search with debounce
-  const handleSearch = (text: string) => {
-    setSearchQuery(text);
   };
 
   // Pull to refresh
@@ -162,10 +361,10 @@ export default function ExploreScreen() {
     fetchCategories();
   }, []);
 
-  // Effect to fetch listings when filters change
+  // Effect to fetch listings when filters change or user changes
   useEffect(() => {
     fetchListings();
-  }, [selectedCategory, selectedType, searchQuery]);
+  }, [selectedCategory, selectedType, debouncedSearchQuery, currentUser]);
 
   const renderCategoryButton = (category: { id: string; name: string; icon: string }) => (
     <TouchableOpacity
@@ -234,67 +433,84 @@ export default function ExploreScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search listings..."
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-      </View>
-
-      <View style={styles.filtersContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.typeFilters}
-        >
-          {listingTypes.map(renderTypeButton)}
-        </ScrollView>
-
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryFilters}
-        >
-          {renderAllCategoriesButton()}
-          {categories.map(renderCategoryButton)}
-        </ScrollView>
-      </View>
-
-      {loading && !isRefreshing ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#b1f03d" />
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search listings..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+
+        <View style={styles.filtersContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.typeFilters}
+          >
+            {listingTypes.map(renderTypeButton)}
+          </ScrollView>
+
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryFilters}
+          >
+            {renderAllCategoriesButton()}
+            {categories.map(renderCategoryButton)}
+          </ScrollView>
         </View>
-      ) : (
-        <FlatList
-          data={listings}
-          renderItem={({ item }) => <ListingCard listing={item} />}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          numColumns={2}
-          refreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No listings found</Text>
-              <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
-            </View>
-          }
-        />
-      )}
-    </View>
+
+        {loading && !isRefreshing ? (
+          renderLoadingState()
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={64} color="#f03d3d" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={fetchListings}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={listings}
+            renderItem={({ item }) => (
+              <ListingCard 
+                listing={item} 
+                onToggleSave={toggleSaveItem}
+                onPress={() => navigateToListing(item.id)}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            numColumns={2}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No listings found</Text>
+                <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+              </View>
+            }
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -362,6 +578,9 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: 'bold',
   },
+  categoryIcon: {
+    marginRight: 4,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -391,6 +610,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 2,
+  },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 8,
   },
   cardImage: {
     width: '100%',
@@ -441,9 +668,90 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 12,
-    color: '#666',
+    color: '#999',
   },
-  categoryIcon: {
-    marginRight: 8,
+  saveButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e0e0e0',
+  },
+  retryButton: {
+    padding: 10,
+    backgroundColor: '#b1f03d',
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  skeletonCard: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    padding: 10,
+    margin: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  skeletonImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  skeletonTitle: {
+    height: 16,
+    backgroundColor: '#e0e0e0',
+    marginBottom: 4,
+  },
+  skeletonDescription: {
+    height: 12,
+    backgroundColor: '#e0e0e0',
+    marginBottom: 4,
+  },
+  skeletonCategory: {
+    height: 12,
+    backgroundColor: '#e0e0e0',
+    marginBottom: 4,
+  },
+  skeletonFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  skeletonPrice: {
+    width: 80,
+    height: 16,
+    backgroundColor: '#e0e0e0',
+  },
+  skeletonSeller: {
+    width: 120,
+    height: 12,
+    backgroundColor: '#e0e0e0',
+  },
+  skeletonContainer: {
+    flex: 1,
+    paddingBottom: 20,
   },
 });

@@ -14,7 +14,7 @@ import {
   Keyboard,
   TouchableWithoutFeedback
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../../lib/supabase';
 import { AuthContext } from '../../_layout';
@@ -26,6 +26,7 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { setIsAuthenticated } = useContext(AuthContext);
+  const router = useRouter();
 
   useEffect(() => {
     console.log('[LoginScreen] Component mounted');
@@ -60,7 +61,14 @@ const LoginScreen = () => {
       }
 
       console.log('[Login] Login successful, session established');
+      
+      // Update auth state
       setIsAuthenticated(true);
+      
+      // Explicitly navigate to home screen
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
       
     } catch (error) {
       console.error('[Login] Login error details:', error);

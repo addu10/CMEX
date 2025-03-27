@@ -28,7 +28,19 @@ export default function RootLayout() {
     // Listen for auth state changes
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[Auth Debug] Auth state changed:', event, session ? 'Session exists' : 'No session');
-      setIsAuthenticated(!!session);
+      
+      if (event === 'SIGNED_IN') {
+        console.log('[Auth Debug] User signed in, redirecting to home');
+        setIsAuthenticated(true);
+        // Let the navigation effect handle the redirection
+      } else if (event === 'SIGNED_OUT') {
+        console.log('[Auth Debug] User signed out, redirecting to auth');
+        setIsAuthenticated(false);
+        // Let the navigation effect handle the redirection
+      } else {
+        // Just update auth state for other events
+        setIsAuthenticated(!!session);
+      }
     });
 
     // Initial session check
@@ -80,7 +92,7 @@ export default function RootLayout() {
       console.log('[Layout Debug] Not authenticated, redirecting to auth...');
       router.replace('/(auth)');
     } else if (isAuthenticated && inAuthGroup) {
-      console.log('[Layout Debug] Authenticated, redirecting to main tabs...');
+      console.log('[Layout Debug] Authenticated, redirecting to home screen...');
       router.replace('/');
     }
   }, [isAuthenticated, segments]);

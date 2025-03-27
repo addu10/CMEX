@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
@@ -166,60 +166,66 @@ export default function MyListingsScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Listings</Text>
-        <View style={styles.placeholderIcon} />
-      </View>
-
-      <View style={styles.statusFilters}>
-        <FlatList
-          horizontal
-          data={statusTypes}
-          renderItem={({ item }) => renderStatusButton(item)}
-          keyExtractor={item => item.id}
-          showsHorizontalScrollIndicator={false}
-          style={styles.statusList}
-        />
-      </View>
-
-      {loading && !isRefreshing ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#b1f03d" />
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Listings</Text>
+          <View style={styles.placeholderIcon} />
         </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+
+        <View style={styles.statusFilters}>
+          <FlatList
+            horizontal
+            data={statusTypes}
+            renderItem={({ item }) => renderStatusButton(item)}
+            keyExtractor={item => item.id}
+            showsHorizontalScrollIndicator={false}
+            style={styles.statusList}
+          />
         </View>
-      ) : (
-        <FlatList
-          data={listings}
-          renderItem={({ item }) => <ListingCardWithActions listing={item} />}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          refreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No listings found</Text>
-              <Text style={styles.emptySubtext}>
-                {selectedStatus === 'all' 
-                  ? "You haven't posted any listings yet"
-                  : `You don't have any ${selectedStatus.toLowerCase()} listings`}
-              </Text>
-            </View>
-          }
-        />
-      )}
-    </View>
+
+        {loading && !isRefreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#b1f03d" />
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={listings}
+            renderItem={({ item }) => <ListingCardWithActions listing={item} />}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No listings found</Text>
+                <Text style={styles.emptySubtext}>
+                  {selectedStatus === 'all' 
+                    ? "You haven't posted any listings yet"
+                    : `You don't have any ${selectedStatus.toLowerCase()} listings`}
+                </Text>
+              </View>
+            }
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',

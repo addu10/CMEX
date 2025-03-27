@@ -1,11 +1,33 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import ProfileScreen from './screens/Main/ProfileScreen';
 
 export default function ProfileLayout() {
   const router = useRouter();
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  
+  // Set up keyboard listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
   
   // Type-safe navigation paths
   const goToHome = () => router.push('/');
@@ -13,65 +35,71 @@ export default function ProfileLayout() {
   const goToSell = () => router.push('/sell');
   const goToSaved = () => router.push('/saved');
   const goToProfile = () => router.push('/profile');
+  const goToChat = () => router.push('/chat');
   
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
       {/* Main content */}
       <View style={styles.content}>
         <ProfileScreen />
       </View>
       
-      {/* Tab Bar */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity 
-          style={styles.tabItem} 
-          onPress={goToHome}
-          activeOpacity={0.7}
-        >
-          <View style={styles.tabItemContainer}>
-            <Ionicons name="home" size={24} color="white" />
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem} 
-          onPress={goToExplore}
-          activeOpacity={0.7}
-        >
-          <View style={styles.tabItemContainer}>
-            <Ionicons name="search" size={24} color="white" />
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.sellButton} 
-          onPress={goToSell}
-          activeOpacity={0.7}
-        >
-          <FontAwesome5 name="plus" size={24} color="black" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem} 
-          onPress={goToSaved}
-          activeOpacity={0.7}
-        >
-          <View style={styles.tabItemContainer}>
-            <Ionicons name="heart" size={24} color="white" />
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem} 
-          onPress={goToProfile}
-          activeOpacity={0.7}
-        >
-          <View style={styles.tabItemContainer}>
-            <Ionicons name="person" size={24} color="#b1f03d" />
-          </View>
-        </TouchableOpacity>
-      </View>
-    </View>
+      {/* Tab Bar - only show when keyboard is not visible */}
+      {!isKeyboardVisible && (
+        <View style={styles.tabBar}>
+          <TouchableOpacity 
+            style={styles.tabItem} 
+            onPress={goToHome}
+            activeOpacity={0.7}
+          >
+            <View style={styles.tabItemContainer}>
+              <Ionicons name="home" size={24} color="white" />
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.tabItem} 
+            onPress={goToExplore}
+            activeOpacity={0.7}
+          >
+            <View style={styles.tabItemContainer}>
+              <Ionicons name="search" size={24} color="white" />
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.sellButton} 
+            onPress={goToSell}
+            activeOpacity={0.7}
+          >
+            <FontAwesome5 name="plus" size={24} color="black" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.tabItem} 
+            onPress={goToChat}
+            activeOpacity={0.7}
+          >
+            <View style={styles.tabItemContainer}>
+              <Ionicons name="chatbubble" size={24} color="white" />
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.tabItem} 
+            onPress={goToProfile}
+            activeOpacity={0.7}
+          >
+            <View style={styles.tabItemContainer}>
+              <Ionicons name="person" size={24} color="#b1f03d" />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
+    </KeyboardAvoidingView>
   );
 }
 
