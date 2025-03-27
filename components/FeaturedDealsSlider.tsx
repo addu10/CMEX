@@ -24,7 +24,7 @@ const FeaturedDealsSlider = () => {
   const fetchFeaturedItems = async () => {
     try {
       setLoading(true);
-      
+
       // First get all categories
       const { data: categories, error: categoriesError } = await supabase
         .from('categories')
@@ -32,7 +32,7 @@ const FeaturedDealsSlider = () => {
         .order('name');
 
       if (categoriesError) throw categoriesError;
-      
+
       if (!categories || categories.length === 0) {
         setFeaturedItems([]);
         return;
@@ -71,7 +71,7 @@ const FeaturedDealsSlider = () => {
 
       const results = await Promise.all(latestItemPromises);
       const filteredResults = results.filter(item => item !== null) as FeaturedItem[];
-      
+
       setFeaturedItems(filteredResults);
       setError(null);
     } catch (err) {
@@ -83,15 +83,15 @@ const FeaturedDealsSlider = () => {
   };
 
   const handleViewItem = (itemId: string) => {
-    // Navigate to item details page - for now, just go to explore
+    // Navigate to item details page
     router.push({
-      pathname: '/explore',
-      params: { itemId }
+      pathname: '/product/[id]',
+      params: { id: itemId }
     });
   };
 
   const renderDealItem = ({ item }: { item: FeaturedItem }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.dealItem}
       onPress={() => handleViewItem(item.id)}
     >
@@ -99,7 +99,7 @@ const FeaturedDealsSlider = () => {
         <Text style={styles.dealCategory}>{item.category_name}</Text>
         <Text style={styles.dealTitle} numberOfLines={2}>{item.title}</Text>
         <Text style={styles.dealPrice}>₹{item.price.toLocaleString()}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.viewButton}
           onPress={() => handleViewItem(item.id)}
         >
@@ -107,9 +107,9 @@ const FeaturedDealsSlider = () => {
         </TouchableOpacity>
       </View>
       <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: item.image_url }} 
-          style={styles.dealImage} 
+        <Image
+          source={{ uri: item.image_url }}
+          style={styles.dealImage}
           resizeMode="cover"
         />
       </View>

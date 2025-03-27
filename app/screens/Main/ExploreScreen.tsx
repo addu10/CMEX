@@ -22,7 +22,7 @@ interface Listing {
   is_saved?: boolean;
 }
 
-const ListingCard: React.FC<{ 
+const ListingCard: React.FC<{
   listing: Listing;
   onToggleSave: (listingId: string, isSaved: boolean) => void;
   onPress?: () => void;
@@ -54,15 +54,15 @@ const ListingCard: React.FC<{
   };
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.card}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <View style={styles.imageContainer}>
         {listing.image_url ? (
-          <Image 
-            source={{ uri: listing.image_url }} 
+          <Image
+            source={{ uri: listing.image_url }}
             style={styles.cardImage}
             onLoadStart={() => setImageLoading(true)}
             onLoadEnd={() => setImageLoading(false)}
@@ -79,14 +79,14 @@ const ListingCard: React.FC<{
         )}
         {renderPlaceholder()}
       </View>
-      <TouchableOpacity 
-        style={styles.saveButton} 
+      <TouchableOpacity
+        style={styles.saveButton}
         onPress={handleToggleSave}
       >
-        <Ionicons 
-          name={isSaved ? "heart" : "heart-outline"} 
-          size={24} 
-          color={isSaved ? "#f03d3d" : "white"} 
+        <Ionicons
+          name={isSaved ? "heart" : "heart-outline"}
+          size={24}
+          color={isSaved ? "#f03d3d" : "white"}
         />
       </TouchableOpacity>
       <Text style={styles.cardTitle} numberOfLines={1}>{listing.title}</Text>
@@ -95,7 +95,7 @@ const ListingCard: React.FC<{
       <View style={styles.cardFooter}>
         <Text style={styles.cardPrice}>
           ₹{listing.price}
-          {listing.listing_type === 'rent' && listing.duration_unit && 
+          {listing.listing_type === 'rent' && listing.duration_unit &&
             `/${listing.duration_unit}`
           }
         </Text>
@@ -107,36 +107,13 @@ const ListingCard: React.FC<{
   );
 };
 
-// Skeleton loader for listings while loading
-const ListingSkeletonLoader = () => (
-  <View style={styles.skeletonCard}>
-    <View style={styles.skeletonImage} />
-    <View style={styles.skeletonTitle} />
-    <View style={styles.skeletonDescription} />
-    <View style={styles.skeletonCategory} />
-    <View style={styles.skeletonFooter}>
-      <View style={styles.skeletonPrice} />
-      <View style={styles.skeletonSeller} />
-    </View>
-  </View>
-);
-
-// Render loading state with skeletons
-const renderLoadingState = () => (
-  <View style={styles.skeletonContainer}>
-    {[1, 2, 3, 4, 5, 6].map(key => (
-      <ListingSkeletonLoader key={key} />
-    ))}
-  </View>
-);
-
 export default function ExploreScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const initialListingType = params.listingType as 'all' | 'sell' | 'rent' || 'all';
   const initialCategoryId = params.categoryId as string || null;
   const initialSearchQuery = params.searchQuery as string || '';
-  
+
   const [listings, setListings] = useState<Listing[]>([]);
   const [categories, setCategories] = useState<Array<{ id: string; name: string; icon: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -156,15 +133,10 @@ export default function ExploreScreen() {
 
   // Navigation to listing details
   const navigateToListing = (listingId: string) => {
-    // For now, just navigate to explore screen with the listingId as a param
-    // In a real app, this would navigate to a details page
-    router.push('/explore');
-    
-    // Show details in an alert for demo purposes
-    Alert.alert(
-      'Listing Details',
-      `You selected listing ID: ${listingId}. In a complete app, this would navigate to a detailed view.`
-    );
+    router.push({
+      pathname: '/product/[id]',
+      params: { id: listingId }
+    });
   };
 
   // Debounce search query to prevent excessive API calls
@@ -184,12 +156,12 @@ export default function ExploreScreen() {
         console.error('Error fetching user:', error);
         return;
       }
-      
+
       if (data?.user) {
         setCurrentUser({ id: data.user.id });
       }
     };
-    
+
     fetchCurrentUser();
   }, []);
 
@@ -214,9 +186,9 @@ export default function ExploreScreen() {
         .from('saved_items')
         .select('listing_id')
         .eq('user_id', userId);
-        
+
       if (error) throw error;
-      
+
       return data?.map(item => item.listing_id) || [];
     } catch (err) {
       console.error('Error fetching saved items:', err);
@@ -256,18 +228,18 @@ export default function ExploreScreen() {
       const { data: listingsData, error: listingsError } = await query;
 
       if (listingsError) throw listingsError;
-      
+
       // Get saved listings if user is logged in
       let savedListingIds: string[] = [];
       if (currentUser) {
         savedListingIds = await fetchSavedListings(currentUser.id);
       }
-      
+
       // Transform the data to match our Listing interface
       const transformedData = listingsData?.map(item => {
         // Find the matching category from our categories state
         const category = categories.find(cat => cat.id === item.category_id);
-        
+
         return {
           ...item,
           category_name: category?.name || item.category_name || 'Unknown Category',
@@ -294,19 +266,19 @@ export default function ExploreScreen() {
   const toggleSaveItem = async (listingId: string, shouldSave: boolean) => {
     if (!currentUser) {
       Alert.alert(
-        'Sign in required', 
+        'Sign in required',
         'Please sign in to save items',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Sign In', 
+          {
+            text: 'Sign In',
             onPress: () => router.push('/(auth)/login')
           }
         ]
       );
       return;
     }
-    
+
     try {
       if (shouldSave) {
         // Add to saved items
@@ -316,7 +288,7 @@ export default function ExploreScreen() {
             user_id: currentUser.id,
             listing_id: listingId
           });
-          
+
         if (error) throw error;
       } else {
         // Remove from saved items
@@ -325,17 +297,17 @@ export default function ExploreScreen() {
           .delete()
           .eq('user_id', currentUser.id)
           .eq('listing_id', listingId);
-          
+
         if (error) throw error;
       }
     } catch (err) {
       console.error('Error toggling saved item:', err);
       Alert.alert('Error', 'Failed to update saved items. Please try again.');
-      
+
       // Reset UI state if the operation failed
-      setListings(listings.map(listing => 
-        listing.id === listingId 
-          ? { ...listing, is_saved: !shouldSave } 
+      setListings(listings.map(listing =>
+        listing.id === listingId
+          ? { ...listing, is_saved: !shouldSave }
           : listing
       ));
     }
@@ -375,10 +347,10 @@ export default function ExploreScreen() {
       ]}
       onPress={() => handleCategoryChange(category.id)}
     >
-      <Ionicons 
-        name={category.icon as any} 
-        size={16} 
-        color={selectedCategory === category.id ? '#000' : '#666'} 
+      <Ionicons
+        name={category.icon as any}
+        size={16}
+        color={selectedCategory === category.id ? '#000' : '#666'}
         style={styles.categoryIcon}
       />
       <Text style={[
@@ -399,10 +371,10 @@ export default function ExploreScreen() {
       ]}
       onPress={() => handleCategoryChange(null)}
     >
-      <Ionicons 
-        name="grid-outline" 
-        size={16} 
-        color={selectedCategory === null ? '#000' : '#666'} 
+      <Ionicons
+        name="grid-outline"
+        size={16}
+        color={selectedCategory === null ? '#000' : '#666'}
         style={styles.categoryIcon}
       />
       <Text style={[
@@ -446,16 +418,16 @@ export default function ExploreScreen() {
         </View>
 
         <View style={styles.filtersContainer}>
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.typeFilters}
           >
             {listingTypes.map(renderTypeButton)}
           </ScrollView>
 
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.categoryFilters}
           >
@@ -465,12 +437,14 @@ export default function ExploreScreen() {
         </View>
 
         {loading && !isRefreshing ? (
-          renderLoadingState()
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#b1f03d" />
+          </View>
         ) : error ? (
           <View style={styles.errorContainer}>
             <Ionicons name="alert-circle-outline" size={64} color="#f03d3d" />
             <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.retryButton}
               onPress={fetchListings}
             >
@@ -481,8 +455,8 @@ export default function ExploreScreen() {
           <FlatList
             data={listings}
             renderItem={({ item }) => (
-              <ListingCard 
-                listing={item} 
+              <ListingCard
+                listing={item}
                 onToggleSave={toggleSaveItem}
                 onPress={() => navigateToListing(item.id)}
               />
@@ -593,8 +567,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
+    fontSize: 16,
     color: 'red',
     textAlign: 'center',
+    marginTop: 12,
+    marginBottom: 8,
   },
   listContainer: {
     paddingBottom: 20,
@@ -692,66 +669,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
   },
   retryButton: {
-    padding: 10,
+    marginTop: 16,
+    padding: 12,
     backgroundColor: '#b1f03d',
     borderRadius: 8,
-    marginTop: 10,
   },
   retryButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: 'white',
-  },
-  skeletonCard: {
-    flex: 1,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 12,
-    padding: 10,
-    margin: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  skeletonImage: {
-    width: '100%',
-    height: 150,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  skeletonTitle: {
-    height: 16,
-    backgroundColor: '#e0e0e0',
-    marginBottom: 4,
-  },
-  skeletonDescription: {
-    height: 12,
-    backgroundColor: '#e0e0e0',
-    marginBottom: 4,
-  },
-  skeletonCategory: {
-    height: 12,
-    backgroundColor: '#e0e0e0',
-    marginBottom: 4,
-  },
-  skeletonFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  skeletonPrice: {
-    width: 80,
-    height: 16,
-    backgroundColor: '#e0e0e0',
-  },
-  skeletonSeller: {
-    width: 120,
-    height: 12,
-    backgroundColor: '#e0e0e0',
-  },
-  skeletonContainer: {
-    flex: 1,
-    paddingBottom: 20,
+    color: '#000',
   },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
 
 interface Listing {
   id: string;
@@ -21,25 +22,34 @@ interface ListingCardProps {
   listing: Listing;
 }
 
-const ListingCard: React.FC<ListingCardProps> = ({ listing }) => (
-  <View style={styles.card}>
-    <Image source={{ uri: listing.image_url }} style={styles.cardImage} />
-    <Text style={styles.cardTitle}>{listing.title}</Text>
-    <Text style={styles.cardDescription} numberOfLines={2}>{listing.description}</Text>
-    <Text style={styles.cardCategory}>{listing.category_name}</Text>
-    <View style={styles.cardFooter}>
-      <Text style={styles.cardPrice}>
-        ₹{listing.price}
-        {listing.listing_type === 'rent' && listing.duration_unit && 
-          `/${listing.duration_unit}`
-        }
-      </Text>
-      <Text style={styles.cardSeller}>
-        by {listing.user_details?.raw_user_meta_data?.first_name || 'Unknown'}
-      </Text>
-    </View>
-  </View>
-);
+const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
+  const handlePress = () => {
+    router.push({
+      pathname: '/product/[id]',
+      params: { id: listing.id }
+    });
+  };
+
+  return (
+    <TouchableOpacity style={styles.card} onPress={handlePress}>
+      <Image source={{ uri: listing.image_url }} style={styles.cardImage} />
+      <Text style={styles.cardTitle}>{listing.title}</Text>
+      <Text style={styles.cardDescription} numberOfLines={2}>{listing.description}</Text>
+      <Text style={styles.cardCategory}>{listing.category_name}</Text>
+      <View style={styles.cardFooter}>
+        <Text style={styles.cardPrice}>
+          ₹{listing.price}
+          {listing.listing_type === 'rent' && listing.duration_unit &&
+            `/${listing.duration_unit}`
+          }
+        </Text>
+        <Text style={styles.cardSeller}>
+          by {listing.user_details?.raw_user_meta_data?.first_name || 'Unknown'}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   card: {

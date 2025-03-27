@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Text, View, Image, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, SafeAreaView } from 'react-native';
+import { Text, View, Image, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppFonts } from '../../../assets/fonts/fonts';
 import * as ImagePicker from 'expo-image-picker';
@@ -26,7 +26,7 @@ const ProfileScreen = () => {
       setLoading(true);
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+
       if (userError) {
         throw userError;
       }
@@ -60,7 +60,7 @@ const ProfileScreen = () => {
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(`${userId}/avatar`);
-      
+
       const publicUrl = data.publicUrl;
 
       // Check if the image exists before setting it
@@ -89,11 +89,11 @@ const ProfileScreen = () => {
         metadata.phone_no = metadata.phone;
         delete metadata.phone;
       }
-      
+
       const { error } = await supabase.auth.updateUser({
         data: metadata
       });
-      
+
       if (error) {
         throw error;
       }
@@ -105,12 +105,12 @@ const ProfileScreen = () => {
   const uploadProfilePicture = async (base64Image: string, userId: string) => {
     try {
       setUploadingImage(true);
-      
+
       // Clean up base64 string - remove prefix if exists
-      const formattedBase64 = base64Image.includes('base64,') ? 
-        base64Image.split('base64,')[1] : 
+      const formattedBase64 = base64Image.includes('base64,') ?
+        base64Image.split('base64,')[1] :
         base64Image;
-      
+
       // Convert base64 to ArrayBuffer
       const arrayBuffer = decode(formattedBase64);
 
@@ -169,7 +169,7 @@ const ProfileScreen = () => {
       if (!result.canceled && result.assets[0].base64) {
         // Get current user
         const { data: { user }, error } = await supabase.auth.getUser();
-        
+
         if (error || !user) {
           Alert.alert('Error', 'Failed to get user information');
           return;
@@ -191,17 +191,17 @@ const ProfileScreen = () => {
         "Are you sure you want to log out?",
         [
           { text: "Cancel", style: "cancel" },
-          { 
-            text: "Log Out", 
+          {
+            text: "Log Out",
             style: "destructive",
             onPress: async () => {
               setLoading(true);
               const { error } = await supabase.auth.signOut();
-              
+
               if (error) {
                 throw error;
               }
-              
+
               // Session state will be handled by the auth listener in _layout.tsx
               setIsAuthenticated(false);
             }
@@ -219,7 +219,7 @@ const ProfileScreen = () => {
     try {
       // Convert dash-case to camelCase if needed
       console.log(`[ProfileScreen] Attempting to navigate to: /user/${screen}`);
-      
+
       // Handle each route explicitly for debugging
       if (screen === 'edit-profile') {
         router.push('/user/edit-profile' as any);
@@ -263,66 +263,71 @@ const ProfileScreen = () => {
     <SafeAreaView style={styles.safeContainer}>
       <View style={styles.container}>
         <Header />
-        <View style={styles.profileSection}>
-          <TouchableOpacity onPress={pickImage} style={styles.imageContainer} disabled={uploadingImage}>
-            {uploadingImage ? (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="small" color="#fff" />
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.profileSection}>
+            <TouchableOpacity onPress={pickImage} style={styles.imageContainer} disabled={uploadingImage}>
+              {uploadingImage ? (
+                <View style={styles.loadingOverlay}>
+                  <ActivityIndicator size="small" color="#fff" />
+                </View>
+              ) : (
+                <Image
+                  source={{ uri: profilePicture || 'https://source.unsplash.com/100x100/?portrait' }}
+                  style={styles.profilePicture}
+                />
+              )}
+              <View style={styles.editIconContainer}>
+                <Ionicons name="camera" size={18} color="#fff" />
               </View>
-            ) : (
-              <Image 
-                source={{ uri: profilePicture || 'https://source.unsplash.com/100x100/?portrait' }} 
-                style={styles.profilePicture} 
-              />
-            )}
-            <View style={styles.editIconContainer}>
-              <Ionicons name="camera" size={18} color="#fff" />
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.name}>{userData?.name}</Text>
-          <Text style={styles.email}>{userData?.email}</Text>
-        </View>
-        <View style={styles.optionsContainer}>
-          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('edit-profile')}>
-            <Ionicons name="person-circle-outline" size={24} color="#000" />
-            <Text style={styles.optionText}>Edit Profile</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('my-listings')}>
-            <Ionicons name="list-outline" size={24} color="#000" />
-            <Text style={styles.optionText}>My Listings</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('change-password')}>
-            <Ionicons name="key-outline" size={24} color="#000" />
-            <Text style={styles.optionText}>Change Password</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('order-history')}>
-            <Ionicons name="time-outline" size={24} color="#000" />
-            <Text style={styles.optionText}>Order History</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('help-support')}>
-            <Ionicons name="help-circle-outline" size={24} color="#000" />
-            <Text style={styles.optionText}>Help & Support</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('terms-conditions')}>
-            <Ionicons name="document-text-outline" size={24} color="#000" />
-            <Text style={styles.optionText}>Terms & Conditions</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('delete-account')}>
-            <Ionicons name="trash-outline" size={24} color="#FF0000" />
-            <Text style={[styles.optionText, { color: '#FF0000' }]}>Delete Account</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.logoutContainer}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>LOGOUT</Text>
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+            <Text style={styles.name}>{userData?.name}</Text>
+            <Text style={styles.email}>{userData?.email}</Text>
+          </View>
+          <View style={styles.optionsContainer}>
+            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('edit-profile')}>
+              <Ionicons name="person-circle-outline" size={24} color="#000" />
+              <Text style={styles.optionText}>Edit Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('my-listings')}>
+              <Ionicons name="list-outline" size={24} color="#000" />
+              <Text style={styles.optionText}>My Listings</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('change-password')}>
+              <Ionicons name="key-outline" size={24} color="#000" />
+              <Text style={styles.optionText}>Change Password</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('order-history')}>
+              <Ionicons name="time-outline" size={24} color="#000" />
+              <Text style={styles.optionText}>Order History</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('help-support')}>
+              <Ionicons name="help-circle-outline" size={24} color="#000" />
+              <Text style={styles.optionText}>Help & Support</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('terms-conditions')}>
+              <Ionicons name="document-text-outline" size={24} color="#000" />
+              <Text style={styles.optionText}>Terms & Conditions</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('delete-account')}>
+              <Ionicons name="trash-outline" size={24} color="#FF0000" />
+              <Text style={[styles.optionText, { color: '#FF0000' }]}>Delete Account</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.logoutContainer}>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutButtonText}>LOGOUT</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -419,6 +424,10 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: 'white',
     fontSize: 16,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 30, // Add some bottom padding for better scrolling experience
   },
 });
 
