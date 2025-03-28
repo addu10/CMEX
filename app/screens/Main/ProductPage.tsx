@@ -194,8 +194,6 @@ const ProductPage = () => {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Product Details</Text>
-                <View style={styles.placeholderIcon} />
             </View>
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -345,9 +343,8 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         paddingHorizontal: 15,
-        paddingTop: 50,
+        paddingTop: 15,
         paddingBottom: 10,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
@@ -355,13 +352,6 @@ const styles = StyleSheet.create({
     },
     backButton: {
         padding: 8,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    placeholderIcon: {
-        width: 40,
     },
     scrollView: {
         flex: 1,

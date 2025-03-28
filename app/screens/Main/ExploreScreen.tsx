@@ -349,7 +349,7 @@ export default function ExploreScreen() {
         // Only fetch saved items if user is logged in
         const updateSavedItems = async () => {
           const savedIds = await fetchSavedListings(currentUser.id);
-          setListings(currentListings => 
+          setListings(currentListings =>
             currentListings.map(listing => ({
               ...listing,
               is_saved: savedIds.includes(listing.id)
@@ -517,9 +517,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderRadius: 10,
+    paddingHorizontal: 17,
     marginBottom: 10,
+  
   },
   searchIcon: {
     marginRight: 10,
@@ -537,6 +538,8 @@ const styles = StyleSheet.create({
   },
   categoryFilters: {
     flexGrow: 0,
+    flexDirection: 'row',
+    paddingVertical: 4,
   },
   typeButton: {
     paddingHorizontal: 16,
@@ -558,6 +561,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

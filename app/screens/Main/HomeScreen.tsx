@@ -128,7 +128,7 @@ export default function HomeScreen() {
         <View style={styles.actionContainer}>
           {actions.map((item) => (
             <TouchableOpacity key={item.id} style={styles.actionButton} onPress={item.onPress}>
-              <Ionicons name={item.icon as any} size={28} color="#000" />
+              <Ionicons name={item.icon as any} size={28} color="#6aa302" />
               <Text style={styles.actionText}>{item.name}</Text>
             </TouchableOpacity>
           ))}

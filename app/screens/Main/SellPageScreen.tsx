@@ -16,6 +16,7 @@ import PickerComponent from '@/components/PickerComponent';
 import { Colors } from '../../../assets/styles/colors'; // Keeping your original colors
 import Header from '@/components/Header';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Category {
   id: string;
@@ -80,7 +81,7 @@ const SellPageScreen = () => {
       setUploadError(null);
     } catch (error: any) {
       console.error("Error fetching categories:", error);
-      
+
       // Retry logic
       if (retryCount < MAX_RETRIES) {
         console.log(`Retrying category fetch... Attempt ${retryCount + 1}`);
@@ -92,7 +93,7 @@ const SellPageScreen = () => {
       setUploadError(
         "Unable to load categories. Please check your internet connection and try again."
       );
-      
+
       // Set default categories if available
       const defaultCategories = [
         { label: 'Fashion', value: '51f0986a-29b3-49d3-942d-afe2345c2d30' },
@@ -116,7 +117,7 @@ const SellPageScreen = () => {
         quality: 0.5,
         base64: true,
       });
-      
+
       if (!result.canceled && result.assets.length > 0) {
         setImage(result.assets[0].uri);
       }
@@ -131,7 +132,7 @@ const SellPageScreen = () => {
       // Convert URI to Base64
       const response = await fetch(uri);
       const blob = await response.blob();
-      
+
       // Convert Blob to Base64
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -139,11 +140,11 @@ const SellPageScreen = () => {
           try {
             const base64Data = reader.result as string;
             const base64Content = base64Data.split(',')[1];
-            
+
             // Generate unique filename
             const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
             const fileName = `${Date.now()}.${fileExt}`;
-            
+
             // Upload to Supabase
             const { data, error: uploadError } = await supabase.storage
               .from('listings')
@@ -184,13 +185,13 @@ const SellPageScreen = () => {
   function decode(base64: string) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
     let bufferLength = base64.length * 0.75,
-    len = base64.length,
-    i,
-    p = 0,
-    encoded1,
-    encoded2,
-    encoded3,
-    encoded4;
+      len = base64.length,
+      i,
+      p = 0,
+      encoded1,
+      encoded2,
+      encoded3,
+      encoded4;
 
     if (base64[base64.length - 1] === '=') {
       bufferLength--;
@@ -200,7 +201,7 @@ const SellPageScreen = () => {
     }
 
     const arraybuffer = new ArrayBuffer(bufferLength),
-    bytes = new Uint8Array(arraybuffer);
+      bytes = new Uint8Array(arraybuffer);
 
     for (i = 0; i < len; i += 4) {
       encoded1 = chars.indexOf(base64[i]);
@@ -280,10 +281,10 @@ const SellPageScreen = () => {
       setDurationValue('');
       setImage(null);
       setUploadError(null);
-      
+
       // Navigate to home screen after successful submission
       router.push('/');
-      
+
     } catch (error: any) {
       console.error('Error creating listing:', error);
       setUploadError(error.message || 'Failed to create listing');
@@ -299,17 +300,22 @@ const SellPageScreen = () => {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.imageContainer}>
             <TouchableOpacity onPress={pickImage} style={styles.imagePreview}>
-              {image ? (
-                <Image source={{ uri: image }} style={styles.image} />
-              ) : (
-                <Text style={styles.imagePlaceholder}>Tap to add image</Text>
-              )}
+              <View style={styles.imagePreviewInner}>
+                {image ? (
+                  <Image source={{ uri: image }} style={styles.image} />
+                ) : (
+                  <View style={styles.imagePlaceholderContainer}>
+                    <Ionicons name="image-outline" size={60} color="#666" />
+                    <Text style={styles.imagePlaceholder}>Tap to add image</Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
           </View>
 
           <View style={styles.formContainer}>
             {uploadError && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => getCategoryList(0)}
                 style={styles.errorContainer}
               >
@@ -437,30 +443,44 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   imagePreview: {
-    width: 120,
-    height: 120,
+    width: 220,
+    height: 200,
     borderRadius: 10,
     backgroundColor: '#E0E0E0',
+    padding: 2,
+  },
+  imagePreviewInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#666',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F8F9FB',
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 10,
+    borderRadius: 6,
+  },
+  imagePlaceholderContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   imagePlaceholder: {
     color: '#666',
+    marginTop: 8,
+    fontSize: 14,
   },
   formContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 16,
+    padding: 15,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+
   },
   input: {
     backgroundColor: '#F5F5F5',
@@ -478,7 +498,7 @@ const styles = StyleSheet.create({
   submitButton: {
     backgroundColor: '#d7f2a5',
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 20,
     alignItems: 'center',
     marginTop: 10,
   },
