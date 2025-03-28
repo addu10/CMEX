@@ -407,6 +407,8 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
     marginBottom: 15,
+    marginHorizontal: 15,
+    borderRadius: 15,
   },
   imageContainer: {
     position: 'relative',
@@ -420,7 +422,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 1,
   },
   profilePicture: {
     width: 110,
@@ -473,11 +475,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 15,
     marginHorizontal: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
     overflow: 'hidden',
   },
   optionItem: {
