@@ -20,7 +20,7 @@ export default function EditProfile() {
       router.replace('/(auth)');
       return;
     }
-    
+
     fetchUserProfile();
   }, [isAuthenticated]);
 
@@ -29,7 +29,7 @@ export default function EditProfile() {
       setLoading(true);
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+
       if (userError) {
         throw userError;
       }
@@ -68,13 +68,13 @@ export default function EditProfile() {
           address
         }
       });
-      
+
       if (error) {
         throw error;
       }
 
       Alert.alert('Success', 'Profile updated successfully!');
-      
+
       // Go back to profile page
       router.back();
     } catch (error) {
@@ -107,7 +107,7 @@ export default function EditProfile() {
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <View style={styles.placeholderIcon} />
       </View>
-      
+
       <ScrollView style={styles.formContainer}>
         <Text style={styles.label}>First Name</Text>
         <TextInput
@@ -116,7 +116,7 @@ export default function EditProfile() {
           onChangeText={setFirstName}
           placeholder="Enter your first name"
         />
-        
+
         <Text style={styles.label}>Last Name</Text>
         <TextInput
           style={styles.input}
@@ -124,14 +124,14 @@ export default function EditProfile() {
           onChangeText={setLastName}
           placeholder="Enter your last name"
         />
-        
+
         <Text style={styles.label}>Email</Text>
         <TextInput
           style={[styles.input, styles.disabledInput]}
           value={email}
           editable={false}
         />
-        
+
         <Text style={styles.label}>Phone Number</Text>
         <TextInput
           style={styles.input}
@@ -140,7 +140,7 @@ export default function EditProfile() {
           placeholder="Enter your phone number"
           keyboardType="phone-pad"
         />
-        
+
         <Text style={styles.label}>Address</Text>
         <TextInput
           style={styles.input}
@@ -149,9 +149,9 @@ export default function EditProfile() {
           placeholder="Enter your address"
           multiline
         />
-        
-        <TouchableOpacity 
-          style={styles.saveButton} 
+
+        <TouchableOpacity
+          style={styles.saveButton}
           onPress={handleSave}
           disabled={saving}
         >
@@ -182,14 +182,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginLeft: 10,
   },
   backButton: {
     padding: 5,
@@ -209,7 +207,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 5,
+    borderRadius: 10,
     padding: 10,
     marginBottom: 20,
     fontSize: 16,
@@ -219,13 +217,15 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: '#b1f03d',
-    padding: 15,
-    borderRadius: 5,
+    padding: 12,
+    borderRadius: 20,
     alignItems: 'center',
     marginVertical: 20,
+    alignSelf: 'center',
+    minWidth: 150,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#000',
   },

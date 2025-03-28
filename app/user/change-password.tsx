@@ -57,12 +57,12 @@ export default function ChangePassword() {
       }
 
       Alert.alert('Success', 'Password changed successfully!');
-      
+
       // Reset fields
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      
+
       // Go back to profile page
       router.back();
     } catch (error) {
@@ -82,7 +82,7 @@ export default function ChangePassword() {
         <Text style={styles.headerTitle}>Change Password</Text>
         <View style={styles.placeholderIcon} />
       </View>
-      
+
       <View style={styles.formContainer}>
         <Text style={styles.label}>Current Password</Text>
         <View style={styles.passwordContainer}>
@@ -104,7 +104,7 @@ export default function ChangePassword() {
             />
           </TouchableOpacity>
         </View>
-        
+
         <Text style={styles.label}>New Password</Text>
         <View style={styles.passwordContainer}>
           <TextInput
@@ -125,7 +125,7 @@ export default function ChangePassword() {
             />
           </TouchableOpacity>
         </View>
-        
+
         <Text style={styles.label}>Confirm New Password</Text>
         <View style={styles.passwordContainer}>
           <TextInput
@@ -146,9 +146,9 @@ export default function ChangePassword() {
             />
           </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
-          style={styles.changeButton} 
+
+        <TouchableOpacity
+          style={styles.changeButton}
           onPress={handleChangePassword}
           disabled={loading}
         >
@@ -171,14 +171,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginLeft: 10,
   },
   backButton: {
     padding: 5,
@@ -199,7 +197,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 5,
+    borderRadius: 10,
     marginBottom: 20,
   },
   passwordInput: {
@@ -213,13 +211,15 @@ const styles = StyleSheet.create({
   },
   changeButton: {
     backgroundColor: '#b1f03d',
-    padding: 15,
-    borderRadius: 5,
+    padding: 12,
+    borderRadius: 20,
     alignItems: 'center',
-    marginTop: 20,
+    marginVertical: 20,
+    alignSelf: 'center',
+    minWidth: 150,
   },
   changeButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#000',
   },

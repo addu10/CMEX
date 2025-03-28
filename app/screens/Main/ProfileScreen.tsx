@@ -286,45 +286,101 @@ const ProfileScreen = () => {
             <Text style={styles.name}>{userData?.name}</Text>
             <Text style={styles.email}>{userData?.email}</Text>
           </View>
+
           <View style={styles.optionsContainer}>
-            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('edit-profile')}>
-              <Ionicons name="person-circle-outline" size={24} color="#000" />
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigateTo('edit-profile')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionIconContainer}>
+                <Ionicons name="person-circle-outline" size={24} color="#666" />
+              </View>
               <Text style={styles.optionText}>Edit Profile</Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" style={styles.chevronIcon} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('my-listings')}>
-              <Ionicons name="list-outline" size={24} color="#000" />
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigateTo('my-listings')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionIconContainer}>
+                <Ionicons name="list-outline" size={24} color="#666" />
+              </View>
               <Text style={styles.optionText}>My Listings</Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" style={styles.chevronIcon} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('change-password')}>
-              <Ionicons name="key-outline" size={24} color="#000" />
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigateTo('change-password')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionIconContainer}>
+                <Ionicons name="key-outline" size={24} color="#666" />
+              </View>
               <Text style={styles.optionText}>Change Password</Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" style={styles.chevronIcon} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('order-history')}>
-              <Ionicons name="time-outline" size={24} color="#000" />
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigateTo('order-history')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionIconContainer}>
+                <Ionicons name="time-outline" size={24} color="#666" />
+              </View>
               <Text style={styles.optionText}>Order History</Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" style={styles.chevronIcon} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('help-support')}>
-              <Ionicons name="help-circle-outline" size={24} color="#000" />
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigateTo('help-support')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionIconContainer}>
+                <Ionicons name="help-circle-outline" size={24} color="#666" />
+              </View>
               <Text style={styles.optionText}>Help & Support</Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" style={styles.chevronIcon} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('terms-conditions')}>
-              <Ionicons name="document-text-outline" size={24} color="#000" />
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigateTo('terms-conditions')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionIconContainer}>
+                <Ionicons name="document-text-outline" size={24} color="#666" />
+              </View>
               <Text style={styles.optionText}>Terms & Conditions</Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" style={styles.chevronIcon} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionItem} onPress={() => navigateTo('delete-account')}>
-              <Ionicons name="trash-outline" size={24} color="#FF0000" />
-              <Text style={[styles.optionText, { color: '#FF0000' }]}>Delete Account</Text>
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigateTo('delete-account')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.optionIconContainer}>
+                <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+              </View>
+              <Text style={[styles.optionText, { color: '#FF3B30' }]}>Delete Account</Text>
+              <Ionicons name="chevron-forward" size={20} color="#FF3B30" style={styles.chevronIcon} />
             </TouchableOpacity>
           </View>
+
           <View style={styles.logoutContainer}>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.logoutButtonText}>LOGOUT</Text>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#fff" style={styles.logoutIcon} />
+              <Text style={styles.logoutButtonText}>Log Out</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -336,11 +392,11 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#F8F9FB',
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8F9FB',
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -349,32 +405,45 @@ const styles = StyleSheet.create({
   profileSection: {
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#fff',
+    marginBottom: 15,
   },
   imageContainer: {
     position: 'relative',
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    borderRadius: 55,
-    padding: 5,
+    marginBottom: 15,
+    borderWidth: 3,
+    borderColor: '#b1f03d',
+    borderRadius: 60,
+    padding: 3,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   profilePicture: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
   },
   editIconContainer: {
     position: 'absolute',
     bottom: 5,
     right: 5,
     backgroundColor: '#b1f03d',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -383,51 +452,86 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 50,
+    borderRadius: 55,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
-    width: 100,
-    height: 100,
+    width: 110,
+    height: 110,
   },
   name: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 5,
   },
   email: {
     fontSize: 16,
-    color: 'gray',
+    color: '#666',
   },
   optionsContainer: {
-    marginTop: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    marginHorizontal: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    overflow: 'hidden',
   },
   optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  optionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   optionText: {
-    marginLeft: 10,
+    flex: 1,
     fontSize: 16,
+    color: '#1A1A1A',
+  },
+  chevronIcon: {
+    marginLeft: 8,
   },
   logoutContainer: {
     marginTop: 30,
-    alignItems: 'center',
+    marginBottom: 30,
+    paddingHorizontal: 15,
   },
   logoutButton: {
-    backgroundColor: 'red',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#FF3B30',
+    padding: 15,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF3B30',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  logoutIcon: {
+    marginRight: 8,
   },
   logoutButtonText: {
-    color: 'white',
+    color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 30, // Add some bottom padding for better scrolling experience
+    paddingBottom: 30,
   },
 });
 
