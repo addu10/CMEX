@@ -3,6 +3,8 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StyleSheet, View, Text } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { supabase } from '../lib/supabase';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 // Hide splash screen on app load
 SplashScreen.hideAsync().catch(error => {
@@ -28,7 +30,7 @@ export default function RootLayout() {
     // Listen for auth state changes
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[Auth Debug] Auth state changed:', event, session ? 'Session exists' : 'No session');
-      
+
       if (event === 'SIGNED_IN') {
         console.log('[Auth Debug] User signed in, redirecting to home');
         setIsAuthenticated(true);
@@ -56,13 +58,13 @@ export default function RootLayout() {
     try {
       console.log('[Layout Debug] Checking session...');
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         console.error('[Layout Debug] Session check error:', error);
         setIsAuthenticated(false);
         return;
       }
-      
+
       console.log('[Layout Debug] Session found:', !!data.session);
       setIsAuthenticated(!!data.session);
     } catch (error) {
@@ -100,78 +102,86 @@ export default function RootLayout() {
   // Show loading screen while checking auth state
   if (isAuthenticated === null) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
-      </View>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.loadingContainer}>
+          <StatusBar style="dark" />
+          <Text>Loading...</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* Auth Group */}
-        <Stack.Screen
-          name="(auth)"
-          redirect={isAuthenticated}
-        />
+    <SafeAreaProvider>
+      <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
+        <StatusBar style="dark" />
+        <SafeAreaView style={styles.container}>
+          <Stack screenOptions={{ headerShown: false }}>
+            {/* Auth Group */}
+            <Stack.Screen
+              name="(auth)"
+              redirect={isAuthenticated}
+            />
 
-        {/* Use Slot for the main app navigation */}
-        <Stack.Screen
-          name="index"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="explore"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="saved"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="sell"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="profile"
-          redirect={!isAuthenticated}
-        />
-        
-        {/* User profile section routes */}
-        <Stack.Screen
-          name="user"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="user/edit-profile"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="user/my-listings"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="user/change-password"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="user/order-history"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="user/help-support"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="user/terms-conditions"
-          redirect={!isAuthenticated}
-        />
-        <Stack.Screen
-          name="user/delete-account"
-          redirect={!isAuthenticated}
-        />
-      </Stack>
-    </AuthContext.Provider>
+            {/* Use Slot for the main app navigation */}
+            <Stack.Screen
+              name="index"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="explore"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="saved"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="sell"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="profile"
+              redirect={!isAuthenticated}
+            />
+
+            {/* User profile section routes */}
+            <Stack.Screen
+              name="user"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="user/edit-profile"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="user/my-listings"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="user/change-password"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="user/order-history"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="user/help-support"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="user/terms-conditions"
+              redirect={!isAuthenticated}
+            />
+            <Stack.Screen
+              name="user/delete-account"
+              redirect={!isAuthenticated}
+            />
+          </Stack>
+        </SafeAreaView>
+      </AuthContext.Provider>
+    </SafeAreaProvider>
   );
 }
 
@@ -180,5 +190,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
   }
 });
