@@ -144,7 +144,7 @@ const FeaturedDealsSlider = () => {
       contentContainerStyle={styles.sliderContainer}
       snapToAlignment="start"
       decelerationRate="fast"
-      snapToInterval={280} // Adjust this to match the width of your items plus padding
+      snapToInterval={265} // Adjust this to match the width of your items plus padding
     />
   );
 };

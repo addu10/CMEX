@@ -162,10 +162,13 @@ export default function HomeScreen() {
           style={styles.continueSellingCard}
           onPress={handleContinueSellingPress}
         >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={styles.continueSellingTitle}>Continue Selling</Text>
+          <Ionicons name="chevron-forward-outline" size={20} color="#777" />
+          </View>
           <View style={styles.continueSellingRow}>
             <Text style={styles.continueSellingText}>Your recently added products will appear here.</Text>
-            <Ionicons name="chevron-forward-outline" size={20} color="#777" />
+           
           </View>
         </TouchableOpacity>
 
@@ -188,9 +191,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 30,
+    paddingHorizontal: 14,
+    paddingVertical: 3,
     marginVertical: 10,
   },
   searchIcon: {
@@ -210,15 +213,11 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
-    marginHorizontal: 8,
+    paddingVertical: 23,
+    marginHorizontal: 10,
     backgroundColor: '#f9f9f9',
     borderRadius: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   actionText: {
     fontSize: 14,
@@ -250,10 +249,10 @@ const styles = StyleSheet.create({
   },
   categoryItem: {
     alignItems: 'center',
-    marginRight: 16,
-    padding: 12,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
+    marginRight: 12,
+    padding: 13,
+    backgroundColor: '#fffff',
+    borderRadius: 15,
   },
   categoryText: {
     fontSize: 14,
@@ -271,7 +270,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+    elevation: 1,
+    gap: 10,
   },
   continueSellingTitle: {
     fontSize: 18,

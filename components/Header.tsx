@@ -22,14 +22,16 @@ const Header = () => {
   }
 
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 ,paddingHorizontal: 8,marginTop: 5}}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
       <Image
         source={require('../assets/images/C-Mex_Logo.png')}
-        style={{ width: 40, height: 40, resizeMode: 'contain' }}
+        style={{ width: 29, height: 29, resizeMode: 'contain' }}
       />
-      <Text style={{ fontSize: 20, color: '#000', fontWeight: 'bold', fontFamily: 'Lexend_400Regular' }}>C.M.E.X</Text>
+      <Text style={{ fontSize: 22, color: '#000', fontWeight: 'bold', fontFamily: 'Lexend_400Regular' }}>C-MEX</Text>
+      </View>
       <TouchableOpacity onPress={navigateToSaved}>
-        <Ionicons name="heart-outline" size={30} color="black" />
+        <Ionicons name="heart-outline" size={25} color="black"/>
       </TouchableOpacity>
     </View>
   );
