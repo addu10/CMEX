@@ -36,6 +36,7 @@ export default function Saved() {
   const goToSell = () => router.push('/sell');
   const goToSaved = () => router.push('/saved');
   const goToProfile = () => router.push('/profile');
+  const goToChat = () => router.push('/chat');
   
   return (
     <KeyboardAvoidingView 
@@ -80,11 +81,11 @@ export default function Saved() {
           
           <TouchableOpacity 
             style={styles.tabItem} 
-            onPress={goToSaved}
+            onPress={goToChat}
             activeOpacity={0.7}
           >
             <View style={styles.tabItemContainer}>
-              <Ionicons name="heart" size={24} color="#b1f03d" />
+              <Ionicons name="chatbubble" size={24} color="#b1f03d" />
             </View>
           </TouchableOpacity>
           

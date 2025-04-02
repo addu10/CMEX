@@ -49,7 +49,7 @@ const ListingCard: React.FC<{
     }
     return null;
   };
-
+  
   return (
     <TouchableOpacity
       style={styles.card}
@@ -121,6 +121,25 @@ export default function ExploreScreen() {
   const [selectedType, setSelectedType] = useState<'all' | 'sell' | 'rent'>(initialListingType);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
+
+  // Add focus effect to refresh saved items
+  useFocusEffect(
+    React.useCallback(() => {
+      if (currentUser) {
+        // Only fetch saved items if user is logged in
+        const updateSavedItems = async () => {
+          const savedIds = await fetchSavedListings(currentUser.id);
+          setListings(currentListings => 
+            currentListings.map(listing => ({
+              ...listing,
+              is_saved: savedIds.includes(listing.id)
+            }))
+          );
+        };
+        updateSavedItems();
+      }
+    }, [currentUser])
+  );
 
   const listingTypes = [
     { id: 'all' as const, name: 'All' },
@@ -342,25 +361,6 @@ export default function ExploreScreen() {
     fetchListings();
   }, [selectedCategory, selectedType, debouncedSearchQuery, currentUser]);
 
-  // Add focus effect to refresh saved items
-  useFocusEffect(
-    React.useCallback(() => {
-      if (currentUser) {
-        // Only fetch saved items if user is logged in
-        const updateSavedItems = async () => {
-          const savedIds = await fetchSavedListings(currentUser.id);
-          setListings(currentListings =>
-            currentListings.map(listing => ({
-              ...listing,
-              is_saved: savedIds.includes(listing.id)
-            }))
-          );
-        };
-        updateSavedItems();
-      }
-    }, [currentUser])
-  );
-
   const renderCategoryButton = (category: { id: string; name: string; icon: string }) => (
     <TouchableOpacity
       key={category.id}
@@ -517,10 +517,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    paddingHorizontal: 17,
+    borderRadius: 8,
+    paddingHorizontal: 10,
     marginBottom: 10,
-  
   },
   searchIcon: {
     marginRight: 10,
@@ -538,8 +537,6 @@ const styles = StyleSheet.create({
   },
   categoryFilters: {
     flexGrow: 0,
-    flexDirection: 'row',
-    paddingVertical: 4,
   },
   typeButton: {
     paddingHorizontal: 16,
@@ -561,8 +558,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   categoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

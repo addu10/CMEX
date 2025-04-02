@@ -10,7 +10,7 @@ import SignupScreen from "../app/screens/auth/SignupScreen";
 import HomeScreen from "../app/screens/Main/HomeScreen";
 import LoginScreen from "../app/screens/auth/LoginScreen";
 import SearchScreen from "../app/screens/Main/ExploreScreen";
-import WishlistScreen from "../app/screens/Main/SavedScreen";
+import ChatScreen from "../app/chat";
 import ProfileScreen from "../app/screens/Main/ProfileScreen";
 import SellPageScreen from "../app/screens/Main/SellPageScreen";
 
@@ -99,8 +99,8 @@ const BottomTabNavigator = () => {
             case "Search":
               iconName = <Ionicons name="search" size={24} color={color} />;
               break;
-            case "Wishlist":
-              iconName = <Ionicons name="heart" size={24} color={color} />;
+            case "Chat":
+              iconName = <Ionicons name="chatbubble" size={24} color={color} />;
               break;
             case "Profile":
               iconName = <Ionicons name="person" size={24} color={color} />;
@@ -120,7 +120,7 @@ const BottomTabNavigator = () => {
           tabBarButton: (props) => <CustomTabBarButton {...props} setSvgVisible={setSvgVisible} />,
         }}
       />
-      <Tab.Screen name="Wishlist" component={WishlistScreen} />
+      <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

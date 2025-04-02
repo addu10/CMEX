@@ -16,6 +16,8 @@ interface Listing {
   listing_type: 'sell' | 'rent';
   duration_unit?: string;
   status: 'active' | 'sold' | 'inactive';
+  created_at: string;
+  user_id: string;
   user_details: {
     raw_user_meta_data: {
       first_name: string;
@@ -43,7 +45,20 @@ export default function MyListingsScreen() {
 
       let query = supabase
         .from('listings')
-        .select('*')
+        .select(`
+          id,
+          title,
+          description,
+          price,
+          image_url,
+          category_id,
+          category_name,
+          listing_type,
+          duration_unit,
+          status,
+          created_at,
+          user_id
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -81,9 +96,34 @@ export default function MyListingsScreen() {
     fetchMyListings();
   };
 
-  const handleEditListing = (listingId: string) => {
-    // TODO: Implement edit functionality
-    console.log('Edit listing:', listingId);
+  const handleMarkAsSold = async (listingId: string) => {
+    try {
+      Alert.alert(
+        "Mark as Sold",
+        "Are you sure you want to mark this listing as sold?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Mark as Sold", 
+            onPress: async () => {
+              const { error } = await supabase
+                .from('listings')
+                .update({ status: 'sold' })
+                .eq('id', listingId);
+
+              if (error) throw error;
+
+              // Refresh the listings
+              fetchMyListings();
+            } 
+          }
+        ]
+      );
+    } catch (err) {
+      console.error('Error marking listing as sold:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      Alert.alert('Error', 'Failed to mark listing as sold. Please try again.');
+    }
   };
 
   const handleDeleteListing = async (listingId: string) => {
@@ -126,15 +166,17 @@ export default function MyListingsScreen() {
     <View style={styles.listingContainer}>
       <ListingCard listing={listing} />
       <View style={styles.actionButtons}>
+        {listing.status === 'active' && (
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => handleMarkAsSold(listing.id)}
+          >
+            <Ionicons name="checkmark-circle" size={16} color="#000" />
+            <Text style={styles.actionButtonText}>Mark as Sold</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity 
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => handleEditListing(listing.id)}
-        >
-          <Ionicons name="pencil" size={16} color="#000" />
-          <Text style={styles.actionButtonText}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.deleteButton]}
+          style={[styles.actionButton, styles.deleteButton, listing.status === 'active' ? { flex: 1 } : { flex: 2 }]}
           onPress={() => handleDeleteListing(listing.id)}
         >
           <Ionicons name="trash" size={16} color="#fff" />

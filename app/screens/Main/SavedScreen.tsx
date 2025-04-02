@@ -38,8 +38,11 @@ const SavedItemCard: React.FC<{
     const [imageError, setImageError] = useState(false);
     
     const handleViewListing = () => {
-        // Navigate to listing detail screen (implement this later)
-        console.log(`View listing: ${item.listing_id}`);
+        // Navigate to product detail page with the listing ID
+        router.push({
+            pathname: '/product/[id]',
+            params: { id: item.listing_id }
+        });
     };
     
     const renderPlaceholder = () => {
